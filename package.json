@@ -1,0 +1,29 @@
+{
+  "name": "carlos-ghosn-simulation-app",
+  "version": "1.0.0",
+  "description": "Interactive Classroom Decision Simulation & Live AI Stakeholder Web App - The Final 48 Hours: Stay or Escape? (Carlos Ghosn HBS Case 9-122-051)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test_suite.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  },
+  "keywords": [
+    "carlos-ghosn",
+    "simulation",
+    "mba",
+    "organizational-behavior",
+    "gemini",
+    "socketio"
+  ],
+  "author": "Group 4",
+  "license": "ISC",
+  "devDependencies": {
+    "socket.io-client": "^4.8.4"
+  }
+}
