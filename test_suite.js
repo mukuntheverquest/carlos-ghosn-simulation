@@ -119,10 +119,10 @@ async function runTestSuite() {
   const presenterHtml = fs.readFileSync(path.join(__dirname, 'public/presenter.html'), 'utf8');
   const presenterJs = fs.readFileSync(path.join(__dirname, 'public/presenter.js'), 'utf8');
 
-  // Key IDs for Student View
+  // Key IDs for Clean Student View
   const studentExpectedIds = [
-    'execIdDisplay', 'levelProgressLabel', 'progressTrack', 'obLensText',
-    'breadcrumbsTrail', 'sceneCard', 'postSimStage', 'cinematicOverlay', 'execModal'
+    'minimalHeader', 'levelIndicator', 'storyCard', 'endCard',
+    'animationOverlay', 'animationStage'
   ];
   studentExpectedIds.forEach(id => {
     assert(studentHtml.includes(`id="${id}"`), `Student HTML contains essential element #${id}`);
@@ -142,12 +142,12 @@ async function runTestSuite() {
 
   // Check 5-level decision tree & animations defined in student.js
   assert(studentJs.includes('DECISION_TREE'), 'student.js defines DECISION_TREE object');
-  assert(studentJs.toUpperCase().includes("ADAMS' EQUITY THEORY"), 'student.js includes Adams\' Equity Theory in Level 2');
-  assert(studentJs.toUpperCase().includes("PROCEDURAL JUSTICE"), 'student.js includes Procedural Justice in Level 3');
-  assert(studentJs.toUpperCase().includes("INTERACTIONAL JUSTICE"), 'student.js includes Interactional Justice in Level 4');
-  assert(studentJs.toUpperCase().includes("OVERCONFIDENCE BIAS"), 'student.js includes Overconfidence Bias in Level 5');
-  assert(studentJs.includes('playLevel1StayAnimation') || studentJs.includes('renderLevel1StayAnimation') || studentJs.includes('courtroom'), 'student.js includes Courtroom animation');
-  assert(studentJs.includes('playLevel4EscapeAnimation') || studentJs.includes('renderLevel4EscapeAnimation') || studentJs.includes('freedom'), 'student.js includes Level 4 Escape Exfiltration animation');
+  assert(studentJs.includes('Saikawa') || studentJs.includes('Double Standard'), 'student.js includes Saikawa double standard in Level 2');
+  assert(studentJs.includes('conviction rate') || studentJs.includes('Due Process'), 'student.js includes conviction rate / Due Process in Level 3');
+  assert(studentJs.includes('audio box') || studentJs.includes('Carole'), 'student.js includes audio box / spousal denial in Level 4');
+  assert(studentJs.includes('Kelly') || studentJs.includes('Verdict'), 'student.js includes Kelly / Verdict in Level 5');
+  assert(studentJs.includes('show3DHouseAnimation'), 'student.js includes 3D House Arrest animation');
+  assert(studentJs.includes('show3DAeroplaneAnimation'), 'student.js includes 3D Flying Aeroplane animation');
 
   // -------------------------------------------------------------------------
   // SECTION 2: SERVER STARTUP & REST ROUTE VERIFICATION
@@ -167,7 +167,7 @@ async function runTestSuite() {
   // 2. GET / (Student Mobile View)
   const studentViewRes = await httpRequest('GET', '/');
   assert(studentViewRes.statusCode === 200, 'GET / returns 200 OK');
-  assert(studentViewRes.body.includes('THE FINAL 48 HOURS'), 'GET / HTML contains title "THE FINAL 48 HOURS"');
+  assert(studentViewRes.body.includes('Carlos Ghosn'), 'GET / HTML contains title "Carlos Ghosn"');
   assert(studentViewRes.body.includes('student.js'), 'GET / HTML links student.js');
 
   // 3. GET /presenter (Classroom Dashboard)

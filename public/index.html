@@ -3,91 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>THE FINAL 48 HOURS: STAY OR ESCAPE? | Carlos Ghosn Simulation</title>
-  <meta name="description" content="Carlos Ghosn HBS Case 9-122-051 Interactive Decision Simulation & Real-Time Classroom App">
-  <meta name="theme-color" content="#0F172A">
+  <title>Carlos Ghosn: Stay or Escape?</title>
+  <meta name="theme-color" content="#FAF8F5">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="student.css">
 </head>
 <body>
-  <div class="app-container" id="app">
-    <!-- STICKY TOP HUD -->
-    <header class="top-hud" id="topHud">
-      <div class="hud-header">
-        <div class="brand-badge">
-          <span class="brand-title">THE FINAL 48 HOURS</span>
-          <span class="case-id-tag">HBS 9-122-051</span>
-        </div>
-        <button class="exec-id-pill" id="execIdBtn" title="Click to edit your Executive ID">
-          <span class="status-dot" id="connStatusDot" title="Live Server Connected"></span>
-          <span id="execIdDisplay">EXEC-482</span>
-        </button>
+  <div class="game-container" id="app">
+    <!-- MINIMAL CLEAN TOP PROGRESS -->
+    <header class="minimal-header" id="minimalHeader">
+      <div class="progress-bar-container">
+        <div class="progress-segment active" data-level="1"></div>
+        <div class="progress-segment" data-level="2"></div>
+        <div class="progress-segment" data-level="3"></div>
+        <div class="progress-segment" data-level="4"></div>
+        <div class="progress-segment" data-level="5"></div>
       </div>
-
-      <div class="hud-progress-row">
-        <span class="level-indicator-label" id="levelProgressLabel">LEVEL 1 / 5</span>
-        <div class="progress-track" id="progressTrack">
-          <div class="progress-segment active" data-level="1"></div>
-          <div class="progress-segment" data-level="2"></div>
-          <div class="progress-segment" data-level="3"></div>
-          <div class="progress-segment" data-level="4"></div>
-          <div class="progress-segment" data-level="5"></div>
-        </div>
-      </div>
-
-      <div class="ob-lens-badge" id="obLensBadge">
-        <span class="ob-icon">⚖</span>
-        <span id="obLensText">BASELINE MORAL & RISK FRAMING</span>
-      </div>
-
-      <div class="breadcrumbs-container" id="breadcrumbsTrail">
-        <span class="breadcrumb-item" id="crumbInit">L1: PENDING</span>
-      </div>
+      <div class="level-indicator" id="levelIndicator">Level 1 of 5</div>
     </header>
 
-    <!-- MAIN SCENE CONTAINER -->
-    <main class="main-stage" id="mainStage">
-      <!-- Dynamic Level Scene Card injected by student.js -->
-      <section class="scene-card" id="sceneCard">
-        <!-- Content populated via student.js renderLevel() -->
+    <!-- MAIN SCENE CARD -->
+    <main class="main-content" id="mainContent">
+      <section class="story-card" id="storyCard">
+        <!-- Injected dynamically via student.js -->
       </section>
 
-      <!-- Post-Level 5 Defense & AI Stage (hidden until L5 complete) -->
-      <section class="post-simulation-stage" id="postSimStage" style="display: none;">
-        <!-- Injected via student.js renderPostSimStage() -->
+      <!-- CLEAN END SCREEN (POST LEVEL 5) -->
+      <section class="end-card" id="endCard" style="display: none;">
+        <!-- Injected dynamically via student.js -->
       </section>
     </main>
 
-    <!-- CINEMATIC TRANSITION OVERLAY -->
-    <div class="cinematic-overlay" id="cinematicOverlay">
-      <div class="cinematic-box" id="cinematicBox">
-        <!-- Animated SVG content dynamically rendered -->
-      </div>
-    </div>
-
-    <!-- EDIT EXEC ID MODAL -->
-    <div class="modal-overlay" id="execModal">
-      <div class="modal-card">
-        <h3 class="modal-title">Consultant Executive ID</h3>
-        <p style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">Your anonymous ID appears on the classroom projector screen during analysis.</p>
-        <input type="text" class="modal-input" id="execIdInput" maxlength="12" placeholder="e.g. EXEC-482">
-        <div class="modal-actions">
-          <button class="btn-secondary" id="cancelExecModalBtn">Cancel</button>
-          <button class="btn-primary" id="saveExecModalBtn">Save ID</button>
-        </div>
-      </div>
+    <!-- 3D TRANSITION ANIMATION OVERLAY -->
+    <div class="animation-overlay" id="animationOverlay">
+      <!-- 3D Animation stage populated dynamically: Stay House vs Escape Aeroplane -->
+      <div class="animation-stage" id="animationStage"></div>
     </div>
   </div>
 
-  <!-- Socket.io with graceful fallback handling -->
+  <!-- Real-time Synchronization -->
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    if (typeof io === 'undefined') {
-      console.warn('Socket.io script not loaded; student client will operate in resilient HTTP polling mode.');
-    }
-  </script>
   <script src="student.js"></script>
 </body>
 </html>
