@@ -176,6 +176,12 @@ async function runTestSuite() {
   assert(presenterRes.body.includes('Executive Command Center') || presenterRes.body.includes('Classroom Projector Dashboard') || presenterRes.body.includes('PRESENTATION COMMAND CENTER'), 'GET /presenter HTML contains dashboard title');
   assert(presenterRes.body.includes('presenter.js'), 'GET /presenter HTML links presenter.js');
 
+  // 4. GET /live-counter (Slide-Matched Live Tally Screen)
+  const liveCounterRes = await httpRequest('GET', '/live-counter');
+  assert(liveCounterRes.statusCode === 200, 'GET /live-counter returns 200 OK');
+  assert(liveCounterRes.body.includes('stayCount'), 'GET /live-counter HTML contains #stayCount');
+  assert(liveCounterRes.body.includes('escapeCount'), 'GET /live-counter HTML contains #escapeCount');
+
   // -------------------------------------------------------------------------
   // SECTION 3: AI ENGINE & DETERMINISTIC FALLBACK VERIFICATION
   // -------------------------------------------------------------------------

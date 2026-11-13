@@ -294,6 +294,14 @@ app.get('/presenter', (req, res) => {
   `);
 });
 
+app.get('/live-counter', (req, res) => {
+  const file = path.join(PUBLIC_DIR, 'live_counter.html');
+  if (fs.existsSync(file)) {
+    return res.sendFile(file);
+  }
+  res.redirect('/presenter');
+});
+
 // ---------------------------------------------------------------------------
 // 5. REST Endpoints
 // ---------------------------------------------------------------------------

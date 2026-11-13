@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Simulation Telemetry | Carlos Ghosn Case</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="live_counter.css">
+</head>
+<body>
+  <div class="counter-container">
+    <!-- TOP SLIDE-STYLE HEADER -->
+    <header class="counter-header">
+      <div class="header-left">
+        <span class="header-pill">LIVE CLASSROOM TELEMETRY · 67 CONSULTANTS</span>
+        <h1 class="header-title">Live Decision Tally: Carlos Ghosn Dilemma</h1>
+      </div>
+      <div class="header-right">
+        <div class="live-pill">
+          <span class="live-pulse"></span>
+          <span id="connectedCount">0 / 67 Joined</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN TWO-COLUMN LIVE TALLY CARDS -->
+    <main class="tally-grid">
+      <!-- STAY IN JAPAN CARD -->
+      <section class="tally-card stay-card">
+        <div class="card-top">
+          <div class="choice-badge stay-badge">OPTION A</div>
+          <span class="choice-icon">🏛</span>
+        </div>
+        <h2 class="choice-title">Stay in Japan</h2>
+        <p class="choice-desc">Fight allegations in Tokyo District Court</p>
+
+        <div class="metric-row">
+          <div class="big-number" id="stayCount">0</div>
+          <div class="metric-meta">
+            <span class="pct-value" id="stayPct">0%</span>
+            <span class="meta-label">of classroom</span>
+          </div>
+        </div>
+
+        <div class="bar-track">
+          <div class="bar-fill stay-fill" id="stayBar" style="width: 0%;"></div>
+        </div>
+      </section>
+
+      <!-- ESCAPE TO LEBANON CARD -->
+      <section class="tally-card escape-card">
+        <div class="card-top">
+          <div class="choice-badge escape-badge">OPTION B</div>
+          <span class="choice-icon">✈</span>
+        </div>
+        <h2 class="choice-title">Escape to Lebanon</h2>
+        <p class="choice-desc">Exfiltrate Tokyo on private jet to Beirut</p>
+
+        <div class="metric-row">
+          <div class="big-number" id="escapeCount">0</div>
+          <div class="metric-meta">
+            <span class="pct-value" id="escapePct">0%</span>
+            <span class="meta-label">of classroom</span>
+          </div>
+        </div>
+
+        <div class="bar-track">
+          <div class="bar-fill escape-fill" id="escapeBar" style="width: 0%;"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- BOTTOM PROGRESS & INFLECTION FOOTER -->
+    <footer class="counter-footer">
+      <div class="footer-card">
+        <span class="footer-label">COGNITIVE SHIFT</span>
+        <span class="footer-value" id="mindChangersVal">0 Students (0%) changed mind</span>
+      </div>
+      <div class="footer-card">
+        <span class="footer-label">PRIMARY OB INFLECTION POINT</span>
+        <span class="footer-value" id="inflectionPointVal">Level 2: Adams' Equity (Saikawa Double Standard)</span>
+      </div>
+      <div class="footer-card">
+        <span class="footer-label">ACTIVE LEVEL</span>
+        <span class="footer-value" id="activeLevelVal">Level 1 of 5</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="live_counter.js"></script>
+</body>
+</html>
