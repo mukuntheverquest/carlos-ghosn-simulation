@@ -449,95 +449,132 @@ body {
 }
 
 /* =============================================================================
-   3D AEROPLANE FLYING ANIMATION (Escape Flight)
+   3D AEROPLANE FLYING ANIMATION (Escape Flight) - ULTRA CRISP CHROMIUM GPU FIX
    ============================================================================= */
 .plane-3d-scene {
   width: 340px;
   height: 260px;
   position: relative;
-  perspective: 900px;
+  perspective: 1000px;
   transform-style: preserve-3d;
   display: flex;
   justify-content: center;
   align-items: center;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  filter: blur(0px); /* Chromium redraw fix */
+  will-change: transform;
 }
 
 /* 3D Sky & Speed Lines */
 .sky-backdrop {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 40%, #E0F2FE 0%, #BAE6FD 60%, #E2E8F0 100%);
+  background: radial-gradient(circle at 60% 30%, #E0F2FE 0%, #BAE6FD 55%, #CBD5E1 100%);
   border-radius: 20px;
-  border: 1px solid #CBD5E1;
+  border: 1px solid #94A3B8;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 
 .speed-particle {
   position: absolute;
   height: 2px;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 2px;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
   animation: speedFly 0.8s linear infinite;
 }
 
 @keyframes speedFly {
-  0% { transform: translateX(200px) translateY(0); width: 10px; opacity: 0; }
+  0% { transform: translate3d(220px, 0, 0); width: 10px; opacity: 0; }
   50% { opacity: 1; }
-  100% { transform: translateX(-200px) translateY(20px); width: 80px; opacity: 0; }
+  100% { transform: translate3d(-220px, 20px, 0); width: 90px; opacity: 0; }
 }
 
 /* 3D Clouds */
 .cloud-layer {
   position: absolute;
-  background: rgba(255, 255, 255, 0.7);
-  filter: blur(4px);
+  background: rgba(255, 255, 255, 0.75);
+  filter: blur(3px);
   border-radius: 50px;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
   animation: cloudZoom 2.2s linear infinite;
 }
 
 @keyframes cloudZoom {
-  0% { transform: translateZ(-200px) translateX(150px); opacity: 0; }
+  0% { transform: translate3d(160px, 0, -180px); opacity: 0; }
   50% { opacity: 0.9; }
-  100% { transform: translateZ(100px) translateX(-150px); opacity: 0; }
+  100% { transform: translate3d(-160px, 0, 80px); opacity: 0; }
 }
 
-/* 3D Banking Aeroplane */
+/* 3D Banking Aeroplane with Zero-Blur Layer Promotion */
 .jet-wrapper {
   position: relative;
-  width: 220px;
-  height: 120px;
+  width: 270px;
+  height: 140px;
   transform-style: preserve-3d;
-  transform: rotateZ(-12deg) rotateY(15deg) rotateX(15deg);
-  animation: planeBank 2.5s ease-in-out infinite alternate;
+  transform: translate3d(0, 0, 0) rotateZ(-12deg) rotateY(16deg) rotateX(12deg);
+  animation: planeBank 2.2s ease-in-out infinite alternate;
+  will-change: transform;
+  backface-visibility: hidden;
+  filter: blur(0px); /* Chromium redraw snap */
 }
 
 @keyframes planeBank {
-  0% { transform: rotateZ(-8deg) rotateY(10deg) rotateX(10deg) translateY(0); }
-  100% { transform: rotateZ(-16deg) rotateY(20deg) rotateX(20deg) translateY(-8px); }
+  0% {
+    transform: translate3d(0, 2px, 0) rotateZ(-8deg) rotateY(10deg) rotateX(8deg);
+    filter: blur(0px);
+  }
+  100% {
+    transform: translate3d(0, -8px, 0) rotateZ(-16deg) rotateY(22deg) rotateX(16deg);
+    filter: blur(0px);
+  }
 }
 
 .jet-svg {
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 20px 25px rgba(15, 23, 42, 0.35));
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 
 /* Jet Engine Contrails */
 .jet-trail {
   position: absolute;
-  right: 180px;
-  top: 55px;
-  width: 140px;
+  right: 210px;
+  top: 68px;
+  width: 160px;
   height: 4px;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.8) 100%);
-  filter: blur(1.5px);
-  animation: trailPulse 0.5s infinite alternate;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.9) 100%);
+  filter: blur(1px);
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  animation: trailPulse 0.4s infinite alternate;
+}
+
+.jet-trail-2 {
+  position: absolute;
+  right: 210px;
+  top: 78px;
+  width: 150px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, rgba(56, 189, 248, 0.8) 100%);
+  filter: blur(1px);
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  animation: trailPulse 0.4s infinite alternate 0.1s;
 }
 
 @keyframes trailPulse {
-  0% { opacity: 0.6; transform: scaleY(0.8); }
-  100% { opacity: 1; transform: scaleY(1.4); }
+  0% { opacity: 0.5; transform: translate3d(0, 0, 0) scaleY(0.8); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) scaleY(1.3); }
 }
 
 /* =============================================================================

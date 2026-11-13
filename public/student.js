@@ -425,7 +425,7 @@
     }, 1800);
   }
 
-  // 3D Flying Aeroplane Animation
+  // 3D Flying Aeroplane Animation (Ultra-Crisp Vector with GPU Redraw Fix)
   function show3DAeroplaneAnimation(callback) {
     const overlay = document.getElementById('animationOverlay');
     const stage = document.getElementById('animationStage');
@@ -434,29 +434,80 @@
     stage.innerHTML = `
       <div class="plane-3d-scene">
         <div class="sky-backdrop">
-          <div class="cloud-layer" style="width: 120px; height: 35px; top: 30px; left: 10px;"></div>
-          <div class="cloud-layer" style="width: 160px; height: 45px; bottom: 40px; right: -20px; animation-delay: -1s;"></div>
-          <div class="speed-particle" style="top: 60px; left: 30px;"></div>
-          <div class="speed-particle" style="top: 140px; left: 70px; animation-delay: -0.4s;"></div>
-          <div class="speed-particle" style="top: 190px; left: 20px; animation-delay: -0.7s;"></div>
+          <div class="cloud-layer" style="width: 140px; height: 38px; top: 24px; left: 16px;"></div>
+          <div class="cloud-layer" style="width: 170px; height: 46px; bottom: 36px; right: -10px; animation-delay: -1s;"></div>
+          <div class="speed-particle" style="top: 55px; left: 20px;"></div>
+          <div class="speed-particle" style="top: 135px; left: 60px; animation-delay: -0.4s;"></div>
+          <div class="speed-particle" style="top: 195px; left: 15px; animation-delay: -0.7s;"></div>
         </div>
 
         <div class="jet-wrapper">
           <div class="jet-trail"></div>
-          <!-- 3D Vector Jet Model -->
-          <svg class="jet-svg" viewBox="0 0 240 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Fuselage -->
-            <path d="M220 70 C200 62, 120 58, 60 62 C40 63, 20 67, 10 70 C20 73, 40 77, 60 78 C120 82, 200 78, 220 70 Z" fill="#F8FAFC" stroke="#64748B" stroke-width="2"/>
-            <!-- Cockpit Glass -->
-            <path d="M195 67 C185 64, 170 64, 160 67 C170 70, 185 70, 195 67 Z" fill="#0EA5E9"/>
-            <!-- Main Swept Wings -->
-            <path d="M130 68 L70 15 C65 10, 55 12, 58 20 L88 68 Z" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
-            <path d="M130 72 L70 125 C65 130, 55 128, 58 120 L88 72 Z" fill="#CBD5E1" stroke="#64748B" stroke-width="1.5"/>
-            <!-- Tail Wing -->
-            <path d="M40 68 L15 32 C12 28, 6 30, 8 36 L25 68 Z" fill="#94A3B8"/>
-            <!-- Jet Engine Under Wing -->
-            <rect x="85" y="48" width="32" height="10" rx="5" fill="#334155"/>
-            <circle cx="117" cy="53" r="4" fill="#38BDF8"/>
+          <div class="jet-trail-2"></div>
+          <!-- Ultra-Crisp Precision Vector Jet Model -->
+          <svg class="jet-svg" viewBox="0 0 360 180" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision">
+            <defs>
+              <linearGradient id="fuselageGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#FFFFFF" />
+                <stop offset="55%" stop-color="#F1F5F9" />
+                <stop offset="100%" stop-color="#CBD5E1" />
+              </linearGradient>
+              <linearGradient id="wingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#F8FAFC" />
+                <stop offset="100%" stop-color="#94A3B8" />
+              </linearGradient>
+              <linearGradient id="engineGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#38BDF8" />
+                <stop offset="100%" stop-color="#0284C7" />
+              </linearGradient>
+            </defs>
+
+            <!-- Shadow underneath for 3D depth -->
+            <ellipse cx="180" cy="155" rx="110" ry="14" fill="rgba(15, 23, 42, 0.18)" />
+
+            <!-- Left Swept Wing (Far Wing) -->
+            <polygon points="175,76 80,18 96,16 200,74" fill="#94A3B8" stroke="#64748B" stroke-width="1.5" />
+
+            <!-- Jet Turbofan Engine (Far) -->
+            <rect x="110" y="58" width="48" height="15" rx="7.5" fill="#334155" />
+            <ellipse cx="158" cy="65.5" rx="5" ry="7.5" fill="url(#engineGlow)" />
+
+            <!-- Main Aerodynamic Fuselage -->
+            <path d="M330,88 C310,75 220,68 110,70 C70,71 35,77 20,88 C35,99 70,105 110,106 C220,108 310,101 330,88 Z" fill="url(#fuselageGrad)" stroke="#64748B" stroke-width="2" />
+
+            <!-- Nose Cone -->
+            <path d="M330,88 C318,80 300,77 285,76 L285,100 C300,99 318,96 330,88 Z" fill="#E2E8F0" opacity="0.6" />
+
+            <!-- Cockpit Windshield -->
+            <polygon points="295,83 270,78 268,88 290,88" fill="#0284C7" stroke="#38BDF8" stroke-width="1" />
+            <line x1="280" y1="79" x2="279" y2="88" stroke="#F8FAFC" stroke-width="1.5" />
+
+            <!-- Passenger Cabin Windows (Warm Executive Glow) -->
+            <circle cx="245" cy="85" r="3" fill="#FBBF24" />
+            <circle cx="232" cy="85" r="3" fill="#FBBF24" />
+            <circle cx="219" cy="85" r="3" fill="#FBBF24" />
+            <circle cx="206" cy="85" r="3" fill="#FBBF24" />
+            <circle cx="193" cy="85" r="3" fill="#FBBF24" />
+            <circle cx="180" cy="85" r="3" fill="#FBBF24" />
+            <circle cx="167" cy="85" r="3" fill="#FBBF24" />
+
+            <!-- Right Swept Wing (Near Wing with 3D Bevel) -->
+            <polygon points="195,96 85,160 105,162 225,98" fill="url(#wingGrad)" stroke="#475569" stroke-width="2" />
+            <!-- Wingtip Navigation Light (Red on Port) -->
+            <circle cx="87" cy="161" r="3" fill="#EF4444" />
+
+            <!-- T-Tail Vertical Stabilizer -->
+            <polygon points="65,72 25,20 42,18 85,70" fill="#E2E8F0" stroke="#64748B" stroke-width="1.5" />
+            <!-- Horizontal Stabilizer -->
+            <polygon points="40,24 15,16 28,14 55,22" fill="#94A3B8" />
+
+            <!-- Jet Turbofan Engine (Near) -->
+            <rect x="115" y="88" width="54" height="18" rx="9" fill="#1E293B" stroke="#475569" stroke-width="1.5" />
+            <ellipse cx="169" cy="97" rx="6" ry="9" fill="url(#engineGlow)" />
+            <ellipse cx="115" cy="97" rx="3" ry="9" fill="#0F172A" />
+
+            <!-- Executive Livery Stripe -->
+            <path d="M280,90 Q180,92 60,86" stroke="#DC2626" stroke-width="2.5" fill="none" opacity="0.85" />
           </svg>
         </div>
       </div>
