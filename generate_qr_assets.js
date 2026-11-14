@@ -4,7 +4,7 @@ const fs = require('fs');
 
 async function generateQRCodes() {
   const targetUrl = process.argv[2] || 'https://carlos-ghosn-simulation.onrender.com';
-  const outputDir = path.resolve(__dirname, '..');
+  const outputDir = __dirname;
   const outputPath = path.join(outputDir, 'Carlos_Ghosn_Simulation_QR_Code.png');
   const publicOutputPath = path.join(__dirname, 'public', 'simulation_qr.png');
 

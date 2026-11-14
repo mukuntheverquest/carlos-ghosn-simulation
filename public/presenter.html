@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Carlos Ghosn Decision Simulation — Classroom Projector Dashboard</title>
-  <link rel="stylesheet" href="presenter.css">
+  <link rel="stylesheet" href="presenter.css?v=20261114">
   <!-- Client-side QRCode Generator -->
   <script src="qrcode.min.js"></script>
   <!-- Socket.io client (served by server or gracefully falls back) -->
@@ -148,7 +148,7 @@
             <!-- Level 4 -->
             <div class="level-progress-item">
               <div class="level-progress-labels">
-                <span class="level-name">L4: The Turning Point <span class="level-lens-tag">Interactional &amp; Loss</span></span>
+                <span class="level-name">L4: The Turning Point <span class="level-lens-tag">Interpersonal &amp; Informational</span></span>
                 <span id="l4-counts-label" class="level-counts">0 / 67 (0%)</span>
               </div>
               <div class="split-progress-bar">
@@ -359,7 +359,7 @@
               <div id="l4-inflection-badge" class="inflection-badge-overlay" style="display: none;">PRIMARY INFLECTION</div>
               <div class="col-header">
                 <div class="col-lvl-title">LEVEL 4</div>
-                <div class="col-ob-lens">Interactional Justice &amp; 42-Mo Delay</div>
+                <div class="col-ob-lens">Interpersonal Justice &amp; 42-Mo Delay</div>
               </div>
               <div class="bars-track-area">
                 <div class="chart-bar-group">
@@ -427,6 +427,20 @@
             </div>
           </div>
 
+          <!-- Challenge Our Recommendation (Alliance Executive Persona) -->
+          <div class="panel-card" style="margin-top: 12px;">
+            <div class="card-title-row">
+              <h3 style="font-size: 11px;">🥊 CHALLENGE OUR RECOMMENDATION</h3>
+              <span class="card-badge" style="background: rgba(168, 85, 247, 0.2); color: #C084FC; font-size: 9px;">ALLIANCE EXECUTIVE</span>
+            </div>
+            <textarea id="recommendation-text-input" rows="2" maxlength="240" style="width: 100%; box-sizing: border-box; background: #0F172A; border: 1px solid #334155; border-radius: 6px; color: #F8FAFC; padding: 6px; font-size: 11px; resize: vertical; margin-top: 6px;" placeholder="Enter recommendation to test (max 240 chars)...">Alliance Equity Escrow &amp; Milestone Vesting Trust tying executive deferred pay to long-term synergy metrics.</textarea>
+            <div style="display: flex; justify-content: flex-end; margin-top: 6px;">
+              <button id="btn-challenge-recommendation" class="btn btn-challenge" style="font-size: 11px; padding: 5px 12px;">
+                <span>🤖 Challenge Our Recommendation</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Live Student Defenses & Spotlight Rebuttal -->
           <div class="defenses-container">
             <div class="defenses-header-row">
@@ -442,6 +456,15 @@
               </div>
               <div id="rebuttal-text-container" class="rebuttal-text">
                 <span id="typewriter-text"></span><span class="typewriter-cursor"></span>
+              </div>
+              <!-- Team Override Note (P0-6) -->
+              <div class="team-note-box" style="margin-top: 10px; padding: 8px; background: rgba(15, 23, 42, 0.7); border: 1px solid #334155; border-radius: 6px; width: 100%; box-sizing: border-box;">
+                <label style="display:block; font-size:10px; color:#94A3B8; font-weight:600; margin-bottom:4px;">Team note: what we corrected or overrode from AI:</label>
+                <textarea id="rebuttal-team-note" rows="2" style="width:100%; box-sizing:border-box; background:#0F172A; border:1px solid #475569; border-radius:4px; color:#F8FAFC; padding:5px; font-size:11px; resize:vertical;" placeholder="Record team critique or override..."></textarea>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                  <button id="btn-save-rebuttal-note" class="btn" style="background:#0284C7; color:#fff; font-size:10px; padding:3px 10px;">💾 Save Team Note</button>
+                  <span id="save-note-status" style="font-size:10px; color:#10B981; display:none;">Saved to audit log!</span>
+                </div>
               </div>
             </div>
 
@@ -585,10 +608,25 @@
     </div>
   </div>
 
+  <!-- ====================================================================== -->
+  <!-- MODAL: Presenter PIN Authentication (P0-3)                             -->
+  <!-- ====================================================================== -->
+  <div id="modal-pin" class="modal-overlay" style="display: none; z-index: 1000;">
+    <div class="modal-content" style="max-width: 420px; text-align: center; padding: 24px;">
+      <h3 style="margin-bottom: 8px; color: #F8FAFC; font-size: 16px;">🔒 Presenter Authentication</h3>
+      <p style="font-size: 12px; color: #94A3B8; margin-bottom: 16px;">Enter the classroom Presenter PIN to unlock administrative controls, rehearsal simulation, and session exports.</p>
+      <input type="password" id="input-presenter-pin" placeholder="Enter Presenter PIN" style="width: 100%; box-sizing: border-box; padding: 10px; font-size: 16px; text-align: center; background: #0F172A; border: 1px solid #475569; border-radius: 6px; color: #F8FAFC; margin-bottom: 12px;">
+      <div style="display: flex; gap: 8px; justify-content: center;">
+        <button id="btn-submit-pin" class="btn btn-primary" style="padding: 8px 24px; background: #0284C7; color: white;">Unlock Dashboard</button>
+      </div>
+      <div id="pin-error-msg" style="color: #EF4444; font-size: 12px; margin-top: 10px; display: none;">Invalid PIN. Please try again.</div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div id="toast-container" class="toast-container"></div>
 
   <!-- Presenter Dashboard Script -->
-  <script src="presenter.js"></script>
+  <script src="presenter.js?v=20261114"></script>
 </body>
 </html>

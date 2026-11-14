@@ -7,6 +7,15 @@
 (function () {
   'use strict';
 
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   // State Containers
   let socket = null;
   let qrcodeInstance = null;
@@ -16,6 +25,18 @@
   let pollingIntervalId = null;
   let activeJoinUrl = '';
   let typewriterTimeoutId = null;
+  let currentLogId = null;
+
+  function getPresenterPin() {
+    return sessionStorage.getItem('presenterPin') || '';
+  }
+
+  function getAuthHeaders(extra = {}) {
+    return Object.assign({
+      'Content-Type': 'application/json',
+      'x-presenter-pin': getPresenterPin()
+    }, extra);
+  }
 
   // DOM Elements
   const el = {
@@ -132,6 +153,11 @@
     rebuttalTargetId: document.getElementById('rebuttal-target-id'),
     rebuttalSourceBadge: document.getElementById('rebuttal-source-badge'),
     typewriterText: document.getElementById('typewriter-text'),
+    rebuttalTeamNote: document.getElementById('rebuttal-team-note'),
+    btnSaveRebuttalNote: document.getElementById('btn-save-rebuttal-note'),
+    saveNoteStatus: document.getElementById('save-note-status'),
+    recommendationTextInput: document.getElementById('recommendation-text-input'),
+    btnChallengeRecommendation: document.getElementById('btn-challenge-recommendation'),
 
     // Modals
     modalRubric: document.getElementById('modal-rubric'),
@@ -147,6 +173,12 @@
     btnCloseResetModal: document.getElementById('btn-close-reset-modal'),
     btnCancelReset: document.getElementById('btn-cancel-reset'),
     btnConfirmReset: document.getElementById('btn-confirm-reset'),
+
+    // PIN Authentication Modal
+    modalPin: document.getElementById('modal-pin'),
+    inputPresenterPin: document.getElementById('input-presenter-pin'),
+    btnSubmitPin: document.getElementById('btn-submit-pin'),
+    pinErrorMsg: document.getElementById('pin-error-msg'),
 
     // Toast
     toastContainer: document.getElementById('toast-container')
@@ -169,7 +201,7 @@
       icon = '❌';
       toast.style.borderColor = '#EF4444';
     }
-    toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+    toast.innerHTML = `<span>${icon}</span><span>${escapeHtml(message)}</span>`;
     el.toastContainer.appendChild(toast);
 
     setTimeout(() => {
@@ -191,76 +223,73 @@
     item.className = `ticker-item ${type}`;
     item.innerHTML = `
       <span class="ticker-time">${timeStr}</span>
-      <span class="ticker-content">${text}</span>
+      <span class="ticker-content">${escapeHtml(text)}</span>
     `;
     el.tickerFeed.insertBefore(item, el.tickerFeed.firstChild);
 
-    // Keep ticker tidy
     while (el.tickerFeed.children.length > 35) {
       el.tickerFeed.removeChild(el.tickerFeed.lastChild);
     }
   }
 
   // -------------------------------------------------------------------------
-  // 3. QR Code Generation & Network Resolution
+  // 3. QR Code & Network Join URL Handling
   // -------------------------------------------------------------------------
   function renderQrCode(url) {
-    if (!url || typeof url !== 'string') return;
-    activeJoinUrl = url.trim();
+    if (!el.qrcodeContainer) return;
+    el.qrcodeContainer.innerHTML = '';
 
-    try {
-      if (typeof QRCode !== 'undefined') {
-        el.qrcodeContainer.innerHTML = '';
-        qrcodeInstance = new QRCode(el.qrcodeContainer, {
-          text: activeJoinUrl,
-          width: 220,
-          height: 220,
-          colorDark: '#0B1120',
-          colorLight: '#FFFFFF',
-          correctLevel: QRCode.CorrectLevel.H
-        });
-      } else {
-        // Fallback display if script fails
-        el.qrcodeContainer.innerHTML = `<div style="color:#000; font-size:12px; padding:20px; text-align:center;">QR Engine Loading...<br><b>${activeJoinUrl}</b></div>`;
-      }
-    } catch (err) {
-      console.warn('[QR] Error generating QR code:', err);
-      el.qrcodeContainer.innerHTML = `<div style="color:#000; font-size:12px; padding:10px;">${activeJoinUrl}</div>`;
+    if (typeof QRCode !== 'undefined') {
+      qrcodeInstance = new QRCode(el.qrcodeContainer, {
+        text: url,
+        width: 130,
+        height: 130,
+        colorDark: '#FFFFFF',
+        colorLight: '#0F172A',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    } else {
+      el.qrcodeContainer.innerHTML = `
+        <div style="color: #94a3b8; font-size: 11px; padding: 20px; text-align: center;">
+          QR Code library loading...
+        </div>
+      `;
     }
 
-    el.joinUrlLink.textContent = activeJoinUrl;
-    el.joinUrlLink.href = activeJoinUrl;
-    el.joinUrlInput.value = activeJoinUrl;
+    el.joinUrlLink.textContent = url;
+    el.joinUrlLink.href = url;
+    activeJoinUrl = url;
   }
 
   async function fetchNetworkInfo() {
     try {
       const res = await fetch('/api/network-info');
-      if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
-      
-      const fullUrl = data.fullUrl || `http://${data.lanIp || 'localhost'}:${data.port || 3000}`;
-      renderQrCode(fullUrl);
-
-      if (el.settingsNetworkDebug) {
-        el.settingsNetworkDebug.textContent = JSON.stringify(data, null, 2);
+      if (data && data.fullUrl) {
+        el.joinUrlInput.value = data.fullUrl;
+        renderQrCode(data.fullUrl);
+        if (el.settingsNetworkDebug) {
+          el.settingsNetworkDebug.textContent = JSON.stringify(data, null, 2);
+        }
+      } else {
+        throw new Error('No fullUrl returned');
       }
-      addTickerItem(`LAN Gateway connected: ${fullUrl}`, 'info');
-    } catch (err) {
-      console.warn('[Network] Failed to fetch LAN info, falling back to window.location:', err);
+    } catch (e) {
+      console.warn('[Presenter] Network info error:', e);
       const fallbackUrl = window.location.origin;
+      el.joinUrlInput.value = fallbackUrl;
       renderQrCode(fallbackUrl);
     }
   }
 
   // -------------------------------------------------------------------------
-  // 4. Typewriter Animation Helper
+  // 4. Typewriter Effect
   // -------------------------------------------------------------------------
   function runTypewriter(text, onComplete) {
     if (typewriterTimeoutId) clearTimeout(typewriterTimeoutId);
     el.typewriterText.textContent = '';
     let i = 0;
-    const speed = 20; // ms per char
+    const speed = 20;
 
     function typeNext() {
       if (i < text.length) {
@@ -308,17 +337,16 @@
     el.cohortCompletionBadge.textContent = `${completionRate}% COMPLETE`;
 
     // 2. KPI Summary Cards
-    // KPI 1: Initial Decision L1
-    const l1 = stats.initialDecision || (stats.levelStats ? stats.levelStats.L1 : { stayPct: 0, escapePct: 0, stayCount: 0, escapeCount: 0 });
-    el.kpiL1StayPct.textContent = `${l1.stayPct || 0}%`;
-    el.kpiL1StayVal.textContent = `${l1.stayCount || 0} (${l1.stayPct || 0}%)`;
-    el.kpiL1EscapeVal.textContent = `${l1.escapeCount || 0} (${l1.escapePct || 0}%)`;
+    const l1 = stats.initialDecision || { stayPct: 0, stayCount: 0, escapeCount: 0 };
+    const l5 = stats.finalVerdict || { escapePct: 0, stayCount: 0, escapeCount: 0 };
 
-    // KPI 2: Final Verdict L5
-    const l5 = stats.finalVerdict || (stats.levelStats ? stats.levelStats.L5 : { stayPct: 0, escapePct: 0, stayCount: 0, escapeCount: 0 });
+    el.kpiL1StayPct.textContent = `${l1.stayPct || 0}%`;
+    el.kpiL1StayVal.textContent = `${l1.stayCount || 0} Stay`;
+    el.kpiL1EscapeVal.textContent = `${l1.escapeCount || 0} Escape`;
+
     el.kpiL5EscapePct.textContent = `${l5.escapePct || 0}%`;
-    el.kpiL5StayVal.textContent = `${l5.stayCount || 0} (${l5.stayPct || 0}%)`;
-    el.kpiL5EscapeVal.textContent = `${l5.escapeCount || 0} (${l5.escapePct || 0}%)`;
+    el.kpiL5StayVal.textContent = `${l5.stayCount || 0} Stay`;
+    el.kpiL5EscapeVal.textContent = `${l5.escapeCount || 0} Escape`;
 
     const deltaEscape = (l5.escapePct || 0) - (l1.escapePct || 0);
     if (deltaEscape > 0) {
@@ -329,52 +357,42 @@
       el.kpiDeltaNote.textContent = 'Zero net shift across cohort';
     }
 
-    // KPI 3: Mind-Changers
     const changers = stats.mindChangers || { count: 0, pct: 0 };
-    el.kpiChangersCount.textContent = changers.count || 0;
-    el.kpiChangersPct.textContent = `(${changers.pct || 0}%)`;
+    el.kpiChangersCount.textContent = `${changers.count || 0}`;
+    el.kpiChangersPct.textContent = `${changers.pct || 0}% of cohort pivoted`;
 
-    // KPI 4: Primary OB Inflection Point
-    const inflection = stats.primaryInflectionPoint || { level: 'L2', levelNumber: 2, netSwitch: 0, obTheory: "Adams' Equity Theory" };
-    el.kpiInflectionLevel.textContent = `LEVEL ${inflection.levelNumber || 2}`;
-    el.kpiInflectionLens.textContent = inflection.obTheory || "Adams' Equity Theory & Referent Comparisons";
-    el.kpiInflectionNet.innerHTML = `Highest net surge: <b style="color:#F59E0B;">+${inflection.netSwitch || 0} to ESCAPE</b>`;
-    el.kpiInflectionBadge.textContent = inflection.level || 'L2';
-    el.headerInflectionBadge.textContent = `${inflection.level || 'L2'}: +${inflection.netSwitch || 0} ESC`;
+    const infl = stats.primaryInflectionPoint || { level: 'L4', lens: 'Interpersonal Justice', netEscapeGain: 0 };
+    el.kpiInflectionLevel.textContent = infl.level;
+    el.kpiInflectionLens.textContent = infl.lens;
+    el.kpiInflectionNet.textContent = `+${infl.netEscapeGain || 0} Escape Shift`;
+    el.kpiInflectionBadge.textContent = `${infl.level} INFLECTION`;
+    el.headerInflectionBadge.textContent = `${infl.level} (${infl.lens.split(' ')[0]})`;
 
-    // Highlight Column in Evolution Chart
-    ['colL2', 'colL3', 'colL4'].forEach(colName => {
-      if (el[colName]) el[colName].classList.remove('highlight-inflection');
-    });
-    ['l2InflectionBadge', 'l3InflectionBadge', 'l4InflectionBadge'].forEach(badgeName => {
-      if (el[badgeName]) el[badgeName].style.display = 'none';
-    });
-
-    const activeColKey = `col${inflection.level}`;
-    const activeBadgeKey = `${inflection.level ? inflection.level.toLowerCase() : 'l2'}InflectionBadge`;
-    if (el[activeColKey]) el[activeColKey].classList.add('highlight-inflection');
-    if (el[activeBadgeKey]) el[activeBadgeKey].style.display = 'block';
-
-    // 3. Live Evolution Chart Bar Heights & Labels
+    // 3. 5-Level Evolution Chart
     levels.forEach(lvl => {
-      const st = stats.levelStats ? stats.levelStats[lvl] : { stayCount: 0, escapeCount: 0, stayPct: 0, escapePct: 0 };
-      const stayBar = el[`${lvl.toLowerCase()}BarStay`];
-      const escBar = el[`${lvl.toLowerCase()}BarEscape`];
-      const stayLabel = el[`${lvl.toLowerCase()}BarStayLabel`];
-      const escLabel = el[`${lvl.toLowerCase()}BarEscapeLabel`];
+      const st = stats.levelStats ? stats.levelStats[lvl] : { stayPct: 0, escapePct: 0, stayCount: 0, escapeCount: 0 };
+      const barStay = el[`${lvl.toLowerCase()}BarStay`];
+      const barEscape = el[`${lvl.toLowerCase()}BarEscape`];
+      const lblStay = el[`${lvl.toLowerCase()}BarStayLabel`];
+      const lblEscape = el[`${lvl.toLowerCase()}BarEscapeLabel`];
       const footStay = el[`${lvl.toLowerCase()}FootStay`];
       const footEscape = el[`${lvl.toLowerCase()}FootEscape`];
 
-      if (stayBar) stayBar.style.height = `${Math.max(4, st.stayPct)}%`;
-      if (escBar) escBar.style.height = `${Math.max(4, st.escapePct)}%`;
-      if (stayLabel) stayLabel.textContent = `${st.stayPct}%`;
-      if (escLabel) escLabel.textContent = `${st.escapePct}%`;
-      if (footStay) footStay.textContent = `${st.stayCount}`;
-      if (footEscape) footEscape.textContent = `${st.escapeCount}`;
+      if (barStay) barStay.style.height = `${Math.max(st.stayPct, 4)}%`;
+      if (barEscape) barEscape.style.height = `${Math.max(st.escapePct, 4)}%`;
+      if (lblStay) lblStay.textContent = `${st.stayPct}%`;
+      if (lblEscape) lblEscape.textContent = `${st.escapePct}%`;
+      if (footStay) footStay.textContent = st.stayCount;
+      if (footEscape) footEscape.textContent = st.escapeCount;
     });
 
-    // 4. Student Defenses Feed
-    renderDefensesFeed(currentFeed);
+    ['l2', 'l3', 'l4'].forEach(k => {
+      const b = el[`${k}InflectionBadge`];
+      if (b) b.style.display = (infl.level.toLowerCase() === k) ? 'block' : 'none';
+    });
+
+    // 4. Render Defenses Feed
+    renderDefensesFeed(feed);
   }
 
   // -------------------------------------------------------------------------
@@ -404,10 +422,10 @@
 
       card.innerHTML = `
         <div class="defense-meta-row">
-          <span class="defense-exec-id">${item.studentId || 'EXEC-CONSULTANT'}</span>
-          <span class="defense-choice-badge ${badgeClass}">${item.decision || 'VOTE'}</span>
+          <span class="defense-exec-id">${escapeHtml(item.studentId || 'EXEC-CONSULTANT')}</span>
+          <span class="defense-choice-badge ${badgeClass}">${escapeHtml(item.decision || 'VOTE')}</span>
         </div>
-        <div class="defense-quote">"${item.defenseText || ''}"</div>
+        <div class="defense-quote">"${escapeHtml(item.defenseText || '')}"</div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
           <span style="font-size:9px; color:var(--text-dim); font-family:var(--font-mono);">${new Date(item.timestamp || Date.now()).toLocaleTimeString()}</span>
           <span style="font-size:10px; color:#A855F7; font-weight:700;">Click to Cross-Examine ❯</span>
@@ -423,19 +441,20 @@
   }
 
   async function triggerDefenseCrossExamination(item, cardElement) {
-    // Highlight selected card
     document.querySelectorAll('.defense-card').forEach(c => c.classList.remove('active-cross-examine'));
     if (cardElement) cardElement.classList.add('active-cross-examine');
 
     el.rebuttalStage.style.display = 'flex';
-    el.rebuttalTargetId.textContent = `CROSS-EXAMINING ${item.studentId} (${item.decision})`;
+    el.rebuttalTargetId.textContent = `CROSS-EXAMINING ${escapeHtml(item.studentId)} (${escapeHtml(item.decision)})`;
     el.rebuttalSourceBadge.textContent = 'GENERATING AI REBUTTAL...';
     el.typewriterText.textContent = 'Formulating cross-examination challenge from Skeptical Nissan Board perspective...';
+    if (el.rebuttalTeamNote) el.rebuttalTeamNote.value = '';
+    if (el.saveNoteStatus) el.saveNoteStatus.style.display = 'none';
 
     try {
       const res = await fetch('/api/ai/challenge', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           feedId: item.id,
           decision: item.decision,
@@ -446,14 +465,18 @@
 
       const data = await res.json();
       if (data && data.challengeText) {
-        el.rebuttalSourceBadge.textContent = data.source === 'gemini' ? 'GEMINI 2.5 FLASH' : 'HBS DETERMINISTIC ENGINE';
+        currentLogId = data.logId || null;
+        el.rebuttalSourceBadge.textContent = data.source === 'gemini' ? 'GEMINI 2.5 FLASH' : 'SCRIPTED FALLBACK';
         runTypewriter(data.challengeText);
         addTickerItem(`AI Cross-examined ${item.studentId} (${item.decision})`, 'defense');
+      } else {
+        throw new Error(data.error || 'Challenge generation failed');
       }
     } catch (err) {
       console.warn('[AI Rebuttal] Failed to query API, using local fallback:', err);
-      const fallback = item.rebuttal || "Considering Japan's >99% conviction rate, 130 days detention without counsel, and Saikawa's uncharged resignation, does your argument truly address the institutional reality of this case?";
-      el.rebuttalSourceBadge.textContent = 'OFFLINE HBS FALLBACK';
+      const fallback = item.rebuttal || "Considering Japan's >99% conviction rate, 130 days in detention with daily interrogation without a lawyer, and Saikawa's uncharged resignation, does your argument truly address the institutional reality of this case?";
+      currentLogId = null;
+      el.rebuttalSourceBadge.textContent = 'SCRIPTED FALLBACK';
       runTypewriter(fallback);
     }
   }
@@ -467,7 +490,6 @@
     el.aiChallengeTextBox.textContent = 'Generating live stakeholder cross-examination challenge...';
     el.aiStatusNote.textContent = 'Querying AI Engine...';
 
-    // Determine current majority
     let majority = 'ESCAPE';
     if (lastStats && lastStats.finalVerdict) {
       majority = lastStats.finalVerdict.majority;
@@ -478,7 +500,7 @@
     try {
       const res = await fetch('/api/ai/challenge', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           majorityDecision: majority,
           apiKey: el.settingsGeminiKey ? el.settingsGeminiKey.value.trim() : null
@@ -487,23 +509,99 @@
 
       const data = await res.json();
       if (data && data.challengeText) {
+        currentLogId = data.logId || null;
         el.aiChallengeTextBox.textContent = `"${data.challengeText}"`;
-        el.aiModelBadge.textContent = data.source === 'gemini' ? 'Gemini 2.5 Flash' : 'HBS Case Fallback';
+        el.aiModelBadge.textContent = data.source === 'gemini' ? 'GEMINI 2.5 FLASH' : 'SCRIPTED FALLBACK';
         el.aiStatusNote.textContent = `Target: Cohort Majority (${majority}) · Grounded in HBS 9-122-051`;
         addTickerItem(`Gemini Board Challenge issued to cohort (${majority} majority)`, 'defense');
         showToast('AI Stakeholder Challenge updated!', 'success');
+      } else {
+        throw new Error(data.error || 'Failed');
       }
     } catch (err) {
       console.warn('[AI Challenge] Error:', err);
       const fallback = majority === 'ESCAPE'
-        ? "You believe leaving Japan is justified because Ghosn perceived the process as unfair. Yet Ghosn settled U.S. SEC fraud charges over $140M in concealed compensation (paying a $1M fine and accepting a 10-year officer ban) and faced allegations of transferring $17M in personal investment losses to Nissan. Does escaping in an audio box while on bail undermine his claim that he wants justice and destroy executive accountability?"
-        : "You believe staying in Japan is the best way to prove his innocence. But considering the potential 42-month legal process, the >99% conviction rate, 70+ boxes of withheld documents, and complete separation from his wife—while Greg Kelly waited nearly two years just for a hearing and Hiroto Saikawa resigned without charges—are you overlooking the human and procedural reality of this decision?";
+        ? "You believe leaving Japan is justified because Ghosn perceived the process as unfair. Yet Ghosn settled U.S. SEC fraud charges over $140M in concealed compensation (paying a $1M fine and accepting a 10-year officer ban) and faced allegations of transferring $17M in personal investment losses to Nissan. Does violating bail terms undermine his claim that he wants justice and destroy executive accountability?"
+        : "You believe staying in Japan is the best way to prove his innocence. But considering the potential 42-month legal process, the >99% conviction rate, withheld documents, and complete separation from his wife—while Greg Kelly waited nearly two years just for a hearing and Hiroto Saikawa resigned without charges—are you overlooking the human and procedural reality of this decision?";
+      currentLogId = null;
       el.aiChallengeTextBox.textContent = `"${fallback}"`;
-      el.aiModelBadge.textContent = 'HBS Case Fallback';
+      el.aiModelBadge.textContent = 'SCRIPTED FALLBACK';
       el.aiStatusNote.textContent = `Target: Cohort Majority (${majority}) · Offline Mode`;
     } finally {
       el.btnTriggerChallenge.disabled = false;
       el.btnReChallenge.disabled = false;
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // 7b. Recommendation Challenge (Alliance Executive Persona)
+  // -------------------------------------------------------------------------
+  async function triggerRecommendationChallenge() {
+    const text = el.recommendationTextInput ? el.recommendationTextInput.value.trim() : '';
+    if (!text) {
+      showToast('Please enter recommendation text to test.', 'warn');
+      return;
+    }
+    if (el.btnChallengeRecommendation) el.btnChallengeRecommendation.disabled = true;
+    el.aiChallengeTextBox.textContent = 'Generating Alliance Executive challenge to team recommendation...';
+
+    try {
+      const res = await fetch('/api/ai/challenge', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          mode: 'recommendation',
+          defenseText: text,
+          apiKey: el.settingsGeminiKey ? el.settingsGeminiKey.value.trim() : null
+        })
+      });
+      const data = await res.json();
+      if (data && data.challengeText) {
+        currentLogId = data.logId || null;
+        el.aiChallengeTextBox.textContent = `"${data.challengeText}"`;
+        el.aiModelBadge.textContent = data.source === 'gemini' ? 'GEMINI 2.5 FLASH' : 'SCRIPTED FALLBACK';
+        el.aiStatusNote.textContent = 'Persona: Alliance Executive · Testing Group 4 Recommendation';
+        showToast('Alliance Executive challenge generated!', 'success');
+      } else {
+        throw new Error(data.error || 'Failed');
+      }
+    } catch (e) {
+      showToast('Recommendation challenge failed: ' + e.message, 'error');
+    } finally {
+      if (el.btnChallengeRecommendation) el.btnChallengeRecommendation.disabled = false;
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // 7c. Save Team Rebuttal Note (P0-6)
+  // -------------------------------------------------------------------------
+  async function saveTeamRebuttalNote() {
+    if (!currentLogId) {
+      showToast('No logged AI rebuttal selected to annotate.', 'warn');
+      return;
+    }
+    const note = el.rebuttalTeamNote ? el.rebuttalTeamNote.value.trim() : '';
+    try {
+      const res = await fetch('/api/ai/note', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          logId: currentLogId,
+          teamNote: note
+        })
+      });
+      const data = await res.json();
+      if (data && data.success) {
+        if (el.saveNoteStatus) {
+          el.saveNoteStatus.style.display = 'inline';
+          setTimeout(() => { if (el.saveNoteStatus) el.saveNoteStatus.style.display = 'none'; }, 3000);
+        }
+        showToast('Team note recorded onto AI audit log!', 'success');
+      } else {
+        showToast(data.error || 'Failed to save note.', 'error');
+      }
+    } catch (e) {
+      showToast('Error saving team note: ' + e.message, 'error');
     }
   }
 
@@ -517,16 +615,21 @@
     addTickerItem('Rehearsal Mode triggered: generating 67 realistic student trajectories...', 'stay');
 
     try {
-      const res = await fetch('/api/simulate', { method: 'POST' });
+      const res = await fetch('/api/simulate', {
+        method: 'POST',
+        headers: getAuthHeaders()
+      });
       const data = await res.json();
       if (data && data.success) {
         showToast('67-Student Rehearsal Simulation Complete!', 'success');
         addTickerItem('Rehearsal completed: 67 students populated across L1-L5', 'escape');
         if (data.stats) updateDashboardUI(data.stats, currentFeed);
+      } else {
+        throw new Error(data.error || 'Simulation failed');
       }
     } catch (err) {
       console.error('[Simulate] Failed:', err);
-      showToast('Simulation request failed. Check server connection.', 'error');
+      showToast('Simulation request failed. ' + err.message, 'error');
     } finally {
       setTimeout(() => {
         el.btnSimulate.disabled = false;
@@ -540,7 +643,10 @@
   // -------------------------------------------------------------------------
   async function resetClassroomSession() {
     try {
-      const res = await fetch('/api/reset', { method: 'POST' });
+      const res = await fetch('/api/reset', {
+        method: 'POST',
+        headers: getAuthHeaders()
+      });
       const data = await res.json();
       if (data && data.success) {
         showToast('Classroom session reset to clean slate.', 'warn');
@@ -548,10 +654,12 @@
         el.rebuttalStage.style.display = 'none';
         el.aiChallengeTextBox.textContent = '"Awaiting cohort vote convergence. Click \'Generate Live Challenge\' to cross-examine the classroom majority under Japanese corporate governance realities."';
         fetchLatestState();
+      } else {
+        throw new Error(data.error || 'Reset failed');
       }
     } catch (err) {
       console.error('[Reset Error]', err);
-      showToast('Reset failed. Check server.', 'error');
+      showToast('Reset failed. ' + err.message, 'error');
     }
   }
 
@@ -561,13 +669,12 @@
   async function fetchLatestState() {
     try {
       const res = await fetch('/api/state');
-      if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       if (data && data.stats) {
         updateDashboardUI(data.stats, data.feed);
       }
     } catch (err) {
-      // Server down or offline
+      console.warn('[Polling] State fetch error:', err);
     }
   }
 
@@ -575,10 +682,9 @@
     if (isPollingFallbackActive) return;
     isPollingFallbackActive = true;
     el.connectionStatusText.textContent = 'POLLING FALLBACK (1.5s)';
-    el.socketPulse.classList.remove('offline');
-    el.socketPulse.style.backgroundColor = '#F59E0B'; // Amber for polling
-
-    if (pollingIntervalId) clearInterval(pollingIntervalId);
+    el.socketPulse.style.background = '#F59E0B';
+    el.socketPulse.style.boxShadow = '0 0 8px #F59E0B';
+    fetchLatestState();
     pollingIntervalId = setInterval(fetchLatestState, 1500);
   }
 
@@ -586,12 +692,13 @@
     if (!isPollingFallbackActive) return;
     isPollingFallbackActive = false;
     if (pollingIntervalId) clearInterval(pollingIntervalId);
-    el.connectionStatusText.textContent = 'LIVE WEBSOCKET';
-    el.socketPulse.style.backgroundColor = '#10B981'; // Green for WS
+    el.connectionStatusText.textContent = 'LIVE SESSION';
+    el.socketPulse.style.background = '#10B981';
+    el.socketPulse.style.boxShadow = '0 0 8px #10B981';
   }
 
   // -------------------------------------------------------------------------
-  // 11. Socket.IO Connection & Event Handlers
+  // 11. WebSocket Setup with Automatic Graceful Fallback
   // -------------------------------------------------------------------------
   function setupSocket() {
     if (typeof io === 'undefined') {
@@ -603,21 +710,18 @@
     try {
       socket = io({
         transports: ['websocket', 'polling'],
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 3000
+        reconnectionAttempts: 10,
+        reconnectionDelay: 1000
       });
 
       socket.on('connect', () => {
         stopHttpPollingFallback();
-        el.socketPulse.classList.remove('offline');
-        addTickerItem('WebSocket established with command server', 'info');
-        socket.emit('get_state');
+        showToast('Real-time classroom link active', 'success');
+        addTickerItem('Presenter projector connected via WebSocket', 'info');
       });
 
       socket.on('disconnect', () => {
-        el.socketPulse.classList.add('offline');
         startHttpPollingFallback();
-        addTickerItem('WebSocket disconnected, falling back to HTTP polling...', 'warn');
       });
 
       socket.on('connect_error', () => {
@@ -630,20 +734,20 @@
         }
       });
 
-      socket.on('new_defense', (entry) => {
-        addTickerItem(`New defense from ${entry.studentId} (${entry.decision}): "${entry.defenseText.substring(0, 40)}..."`, 'defense');
+      socket.on('new_defense', (defense) => {
+        if (defense) {
+          addTickerItem(`${defense.studentId} submitted Level 5 defense: "${defense.defenseText}"`, 'defense');
+          showToast(`New defense from ${defense.studentId}!`, 'info');
+        }
       });
 
       socket.on('ai_rebuttal_result', (data) => {
         if (data && data.challengeText) {
+          currentLogId = data.logId || null;
           el.rebuttalStage.style.display = 'flex';
-          el.rebuttalSourceBadge.textContent = data.source === 'gemini' ? 'GEMINI 2.5 FLASH' : 'HBS DETERMINISTIC ENGINE';
+          el.rebuttalSourceBadge.textContent = data.source === 'gemini' ? 'GEMINI 2.5 FLASH' : 'SCRIPTED FALLBACK';
           runTypewriter(data.challengeText);
         }
-      });
-
-      socket.on('session_reset', () => {
-        fetchLatestState();
       });
 
     } catch (e) {
@@ -653,35 +757,115 @@
   }
 
   // -------------------------------------------------------------------------
-  // 12. Event Listeners & Modal Controls
+  // 12. PIN Authentication Flow
+  // -------------------------------------------------------------------------
+  function updateExportLinks() {
+    const pin = getPresenterPin();
+    if (el.exportMenu) {
+      const links = el.exportMenu.querySelectorAll('a');
+      links.forEach(a => {
+        const href = a.getAttribute('href').split('?')[0];
+        const format = a.textContent.includes('JSON') ? 'json' : 'txt';
+        a.setAttribute('href', `${href}?format=${format}&pin=${encodeURIComponent(pin)}`);
+      });
+    }
+  }
+
+  function showPinModal() {
+    if (el.modalPin) el.modalPin.style.display = 'flex';
+    if (el.btnSimulate) el.btnSimulate.disabled = true;
+  }
+
+  function hidePinModal() {
+    if (el.modalPin) el.modalPin.style.display = 'none';
+    if (el.btnSimulate) el.btnSimulate.disabled = false;
+    updateExportLinks();
+  }
+
+  async function checkPresenterAuth() {
+    const pin = getPresenterPin();
+    if (!pin) {
+      showPinModal();
+      return;
+    }
+    try {
+      const res = await fetch('/api/auth/verify-pin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-presenter-pin': pin
+        }
+      });
+      if (res.ok) {
+        hidePinModal();
+      } else {
+        sessionStorage.removeItem('presenterPin');
+        showPinModal();
+      }
+    } catch (e) {
+      hidePinModal();
+    }
+  }
+
+  async function handlePinSubmit() {
+    const pin = el.inputPresenterPin ? el.inputPresenterPin.value.trim() : '';
+    if (!pin) return;
+    try {
+      const res = await fetch('/api/auth/verify-pin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-presenter-pin': pin
+        }
+      });
+      if (res.ok) {
+        sessionStorage.setItem('presenterPin', pin);
+        if (el.pinErrorMsg) el.pinErrorMsg.style.display = 'none';
+        hidePinModal();
+        showToast('Presenter controls unlocked!', 'success');
+      } else {
+        if (el.pinErrorMsg) el.pinErrorMsg.style.display = 'block';
+      }
+    } catch (e) {
+      showToast('Error verifying PIN: ' + e.message, 'error');
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // 13. UI Event Listeners & Modals
   // -------------------------------------------------------------------------
   function bindEventListeners() {
-    // URL input live change
-    el.joinUrlInput.addEventListener('input', (e) => {
-      renderQrCode(e.target.value);
-    });
+    // PIN Authentication
+    if (el.btnSubmitPin) el.btnSubmitPin.addEventListener('click', handlePinSubmit);
+    if (el.inputPresenterPin) {
+      el.inputPresenterPin.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handlePinSubmit();
+      });
+    }
 
-    el.btnRefreshQr.addEventListener('click', () => {
-      renderQrCode(el.joinUrlInput.value);
-      showToast('QR Code regenerated!', 'success');
-    });
-
+    // Copy Join URL
     el.btnCopyUrl.addEventListener('click', () => {
-      if (navigator.clipboard && el.joinUrlInput.value) {
-        navigator.clipboard.writeText(el.joinUrlInput.value).then(() => {
-          el.copyStatus.style.display = 'inline';
-          setTimeout(() => { el.copyStatus.style.display = 'none'; }, 2000);
-          showToast('Join URL copied to clipboard!', 'success');
-        });
+      const val = el.joinUrlInput.value.trim();
+      if (!val) return;
+      navigator.clipboard.writeText(val).then(() => {
+        el.copyStatus.style.display = 'inline';
+        setTimeout(() => { el.copyStatus.style.display = 'none'; }, 2000);
+        showToast('Classroom Join URL copied to clipboard!', 'success');
+      }).catch(() => {
+        showToast('Failed to copy. Please copy manually.', 'warn');
+      });
+    });
+
+    // Refresh QR code
+    el.btnRefreshQr.addEventListener('click', () => {
+      const url = el.joinUrlInput.value.trim();
+      if (url) {
+        renderQrCode(url);
+        showToast('QR code refreshed for ' + url, 'info');
       }
     });
 
-    // Toolbar buttons
-    el.btnSimulate.addEventListener('click', triggerSimulation);
-    el.btnTriggerChallenge.addEventListener('click', triggerGeneralAiChallenge);
-    el.btnReChallenge.addEventListener('click', triggerGeneralAiChallenge);
-
-    // Export dropdown toggle
+    // Export dropdown
     el.btnExportDropdown.addEventListener('click', (e) => {
       e.stopPropagation();
       const isVisible = el.exportMenu.style.display === 'block';
@@ -689,10 +873,22 @@
     });
 
     document.addEventListener('click', () => {
-      el.exportMenu.style.display = 'none';
+      if (el.exportMenu) el.exportMenu.style.display = 'none';
     });
 
-    // Reset modals
+    // Header buttons
+    el.btnSimulate.addEventListener('click', triggerSimulation);
+    el.btnTriggerChallenge.addEventListener('click', triggerGeneralAiChallenge);
+    el.btnReChallenge.addEventListener('click', triggerGeneralAiChallenge);
+
+    if (el.btnChallengeRecommendation) {
+      el.btnChallengeRecommendation.addEventListener('click', triggerRecommendationChallenge);
+    }
+    if (el.btnSaveRebuttalNote) {
+      el.btnSaveRebuttalNote.addEventListener('click', saveTeamRebuttalNote);
+    }
+
+    // Reset modal
     el.btnResetSession.addEventListener('click', () => {
       el.modalResetConfirm.style.display = 'flex';
     });
@@ -729,15 +925,17 @@
       try {
         const res = await fetch('/api/settings/apikey', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ apiKey: key })
         });
         const data = await res.json();
         if (data && data.success) {
-          showToast(key ? 'Gemini API Key saved!' : 'Gemini Key cleared, using fallback.', 'success');
+          showToast(key ? 'Gemini API Key saved in runtime memory!' : 'Gemini Key cleared, using fallback.', 'success');
+        } else {
+          showToast(data.error || 'Failed to save key.', 'error');
         }
       } catch (err) {
-        showToast('Failed to save API key on server.', 'error');
+        showToast('Failed to save API key on server: ' + err.message, 'error');
       }
     });
 
@@ -769,10 +967,11 @@
   }
 
   // -------------------------------------------------------------------------
-  // 13. Initialization
+  // 14. Initialization
   // -------------------------------------------------------------------------
   async function init() {
     bindEventListeners();
+    await checkPresenterAuth();
     await fetchNetworkInfo();
     setupSocket();
     fetchLatestState();

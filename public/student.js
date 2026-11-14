@@ -3,31 +3,44 @@
  * Student Mobile View ('/') - Clean Minimalist Experience
  * Features:
  * - Warm Light Beige Aesthetic
- * - Short & Punchy Story Text
+ * - Short & Punchy Story Text with HBS Case Citations
  * - Two Clear Choices: "Stay in Japan" vs "Escape to Lebanon"
  * - 3D Animation after EVERY selection:
  *   * Stay: 3D Tokyo House Arrest (Carlos inside under surveillance)
  *   * Escape: 3D Aeroplane Flying (Private jet banking through 3D clouds)
  * - Seamless synchronization with Presenter Dashboard
+ * - Safe XSS Escaping & Privacy Notice
  */
 
 (function () {
   'use strict';
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
 
   const STORAGE_KEY_ID = 'ghosn_exec_id';
   const STORAGE_KEY_STATE = 'ghosn_student_clean_v2';
   const POLL_INTERVAL_MS = 1500;
 
   // ---------------------------------------------------------------------------
-  // 1. SHORT & PUNCHY 5-LEVEL DECISION TREE
+  // 1. SHORT & PUNCHY 5-LEVEL DECISION TREE WITH VERIFIED CITATIONS
   // ---------------------------------------------------------------------------
   const DECISION_TREE = {
     1: {
-      tag: 'December 2019 · Tokyo',
+      citation: 'Case p.3',
+      tag: 'December 2019 · Case p.3',
       title: 'The Accusation',
-      situation: 'You are Carlos Ghosn, former CEO of Nissan, held under 24/7 camera surveillance on $14M bail. Japanese prosecutors accuse you of financial misconduct, but you claim it is a corporate coup to block a Renault-Nissan merger.',
+      situation: 'You are monitored by security cameras at your Tokyo home, on about $14M in total bail (Case p.3). You say the case is politically motivated, fueled by national pride and the proposed Nissan-Renault merger (Case p.3).',
       question: 'What should Carlos Ghosn do?',
+      stayLabel: 'Stay in Japan',
       staySubtext: 'Fight the charges in Tokyo court',
+      escapeLabel: 'Escape to Lebanon',
       escapeSubtext: 'Flee the country secretly'
     },
     2: {
@@ -35,15 +48,21 @@
       title: 'Unequal Justice',
       routes: {
         A: { // If L1 was STAY
-          situation: 'Your successor, Nissan CEO Hiroto Saikawa, admitted taking $440,000 in improper compensation. Saikawa was allowed to quietly resign with zero criminal charges—while you face up to 15 years in prison.',
+          citation: 'Case pp.4, 9',
+          situation: 'Saikawa was found to have received $440,000 in excess pay, blamed a Nissan error, and resigned with no criminal charges (Case p.9).',
           question: 'What would you do now?',
+          stayLabel: 'Stay in Japan',
           staySubtext: 'Stay and prove your innocence',
+          escapeLabel: 'Escape to Lebanon',
           escapeSubtext: 'Reject this double standard and leave'
         },
         B: { // If L1 was ESCAPE
-          situation: 'Escaping forfeits your $14M bail, brands you an international fugitive, and leaves your American colleague Greg Kelly behind in a Japanese jail alone.',
+          citation: 'Case pp.4–5, 9',
+          situation: 'Leaving forfeits about $14M in bail and leaves your colleague Greg Kelly, charged as a co-conspirator and out on bail without a passport, to face trial in Japan (Case p.9).',
           question: 'Would you continue with the escape?',
+          stayLabel: 'Stay in Japan',
           staySubtext: 'Cancel escape and stand trial',
+          escapeLabel: 'Escape to Lebanon',
           escapeSubtext: 'Continue with the escape plan'
         }
       }
@@ -53,15 +72,21 @@
       title: 'The Odds of Justice',
       routes: {
         A: { // If L2 was STAY
-          situation: 'Japan has a >99% conviction rate. Prosecutors are withholding 70+ boxes of defense evidence, and after 130 days in detention, your trial still has no official start date.',
+          citation: 'Case pp.4–5, 8',
+          situation: 'After 130 days in detention across two arrests, prosecutors are withholding interrogation recordings and thousands of files, and a year after the first charges your trial still has no start date (Case pp.4–5).',
           question: 'Would you still stay in Japan?',
+          stayLabel: 'Stay in Japan',
           staySubtext: 'Keep faith in the court',
+          escapeLabel: 'Escape to Lebanon',
           escapeSubtext: 'Abandon a rigged trial'
         },
         B: { // If L2 was ESCAPE
-          situation: 'Collaborators estimate a 67% chance of escape. But many steps cannot be tested beforehand. If caught, you return to a maximum-security prison cell.',
+          citation: 'Case pp.4–5',
+          situation: 'Your collaborators assure you the plan is 100% guaranteed, with a Plan B and a Plan C. Your own bar was a two-in-three chance. Many steps cannot be tested beforehand, and if caught you violate bail and return to prison to await both trials (Case pp.4–5).',
           question: 'Would you trust the escape plan?',
+          stayLabel: 'Stay in Japan',
           staySubtext: 'Too risky — cancel and stay',
+          escapeLabel: 'Escape to Lebanon',
           escapeSubtext: 'Accept the risk and continue'
         }
       }
@@ -71,26 +96,35 @@
       title: 'The Final Hours',
       routes: {
         A: { // If L3 was STAY
-          situation: 'The Tokyo court denies you any contact with your wife Carole for Christmas. Lawyers warn that non-overlapping trials will trap you in Japan for up to 42 months of solitary waiting.',
+          citation: 'Case pp.5–6',
+          situation: 'The judge denies your request for overlapping trials—meaning up to 42 months of trials and appeals—and denies, once again, your request to see your wife Carole (Case pp.5–6).',
           question: 'What is your final move?',
+          stayLabel: 'Stay in Japan',
           staySubtext: 'Endure the 42-month trial',
+          escapeLabel: 'Escape to Lebanon',
           escapeSubtext: 'Leave before it gets worse'
         },
         B: { // If L3 was ESCAPE
-          situation: 'You are hidden in an Osaka hotel room. Two large audio speaker boxes and a private jet to Istanbul are waiting at Kansai Airport.',
+          citation: 'Case pp.1, 5–6',
+          situation: 'You travel to Osaka by train and check into a hotel with two men. They later leave with two large audio equipment boxes, bound for a nearby airport and a private jet to Istanbul (Case p.1).',
           question: 'Do you commit to the escape?',
+          stayLabel: 'Stay in Japan',
           staySubtext: 'Abandon plan and stay in Japan',
-          escapeSubtext: 'Climb into the audio box'
+          escapeLabel: 'Commit to the escape',
+          escapeSubtext: 'Execute exfiltration to Istanbul'
         }
       }
     },
     5: {
+      citation: 'Case pp.1, 7, 9',
       tag: 'Historical Outcome',
       title: 'The Verdict in Hindsight',
-      situation: 'Carlos Ghosn smuggled himself onto the jet inside an audio box and escaped to Beirut. He regained his personal freedom—but Interpol issued a Red Notice, his wife faces an arrest warrant, and he can never leave Lebanon. Meanwhile, Greg Kelly stayed and waited nearly 2 years just for a hearing.',
+      situation: "Ghosn fled by private jet to Istanbul and then Beirut (Case p.1). Lebanon, which has no extradition agreement with Japan, banned him from international travel while it reviewed Japan's file (Case p.9). Greg Kelly stayed; his first hearing was not set until September 15, 2020, almost two years after his arrest (Case p.9).",
       question: 'Knowing the real outcome, what should Carlos Ghosn have done?',
+      stayLabel: 'Stay in Japan',
       staySubtext: 'Stay in Japan and fight',
-      escapeSubtext: 'Escape to Lebanon'
+      escapeLabel: 'Escape to Lebanon',
+      escapeSubtext: 'Escape was the only choice'
     }
   };
 
@@ -298,47 +332,61 @@
 
     let situation = '';
     let question = data.question;
+    let stayLabel = data.stayLabel || 'Stay in Japan';
     let staySubtext = data.staySubtext || 'Fight in court';
+    let escapeLabel = data.escapeLabel || 'Escape to Lebanon';
     let escapeSubtext = data.escapeSubtext || 'Flee Tokyo';
+    let citation = data.citation || 'Case p.1';
 
     if (level === 1 || level === 5) {
       situation = data.situation;
+      citation = data.citation;
     } else {
       const prevChoice = state.choices[level - 1] || 'STAY';
       const routeKey = prevChoice === 'STAY' ? 'A' : 'B';
       const route = data.routes[routeKey];
       situation = route.situation;
       question = route.question;
+      stayLabel = route.stayLabel || 'Stay in Japan';
       staySubtext = route.staySubtext;
+      escapeLabel = route.escapeLabel || 'Escape to Lebanon';
       escapeSubtext = route.escapeSubtext;
+      citation = route.citation || 'Case p.1';
     }
 
     card.innerHTML = `
       <div class="story-header">
-        <span class="story-tag">${data.tag}</span>
-        <h1 class="story-title">${data.title}</h1>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="story-tag">${escapeHtml(data.tag)}</span>
+          <span class="citation-badge" style="font-size:11px; font-weight:700; color:#475569; background:#E2E8F0; padding:2px 8px; border-radius:6px; font-family:monospace;">${escapeHtml(citation)}</span>
+        </div>
+        <h1 class="story-title">${escapeHtml(data.title)}</h1>
       </div>
 
-      <p class="story-body">${situation}</p>
+      <p class="story-body">${escapeHtml(situation)}</p>
 
-      <div class="question-prompt">${question}</div>
+      <div class="question-prompt">${escapeHtml(question)}</div>
 
       <div class="options-container">
         <button class="btn-choice btn-stay" id="btnStay">
           <div class="btn-content">
-            <span class="btn-label">Stay in Japan</span>
-            <span class="btn-subtext">${staySubtext}</span>
+            <span class="btn-label">${escapeHtml(stayLabel)}</span>
+            <span class="btn-subtext">${escapeHtml(staySubtext)}</span>
           </div>
           <span class="btn-icon">🏛</span>
         </button>
 
         <button class="btn-choice btn-escape" id="btnEscape">
           <div class="btn-content">
-            <span class="btn-label">Escape to Lebanon</span>
-            <span class="btn-subtext">${escapeSubtext}</span>
+            <span class="btn-label">${escapeHtml(escapeLabel)}</span>
+            <span class="btn-subtext">${escapeHtml(escapeSubtext)}</span>
           </div>
           <span class="btn-icon">✈</span>
         </button>
+      </div>
+
+      <div style="font-size: 11px; color: #71717A; text-align: center; margin-top: 14px; border-top: 1px dashed #E4E0D7; padding-top: 10px;">
+        🔒 Anonymous simulation. Please do not enter names or personal information.
       </div>
     `;
 
@@ -553,10 +601,10 @@
         <textarea 
           class="defense-input" 
           id="defenseInput" 
-          placeholder="e.g. Due process was impossible in a system with 99% conviction..."
+          placeholder="e.g. Due process was compromised by withheld files and conviction rates..."
           maxlength="140"
           ${state.hasSubmittedDefense ? 'disabled' : ''}
-        >${state.defenseText || ''}</textarea>
+        >${escapeHtml(state.defenseText || '')}</textarea>
 
         <button class="btn-submit-defense" id="btnSubmitDefense" ${state.hasSubmittedDefense ? 'disabled style="background: #10B981;"' : ''}>
           ${state.hasSubmittedDefense ? '✓ Transmitted to Classroom Screen' : 'Submit to Classroom Screen'}
