@@ -32,6 +32,10 @@
           <span>Consultants:</span>
           <span id="connected-count" class="counter-value">0 / 67</span>
         </div>
+        <div class="telemetry-pill" title="Live Level 5 Final Decision Count" style="border-color: #38BDF8; background: rgba(56, 189, 248, 0.08);">
+          <span style="color:#94A3B8;">L5 Verdict:</span>
+          <span id="header-l5-badge" style="color: #38BDF8; font-weight: 800; font-family: var(--font-mono);">0 STAY · 0 ESCAPE</span>
+        </div>
         <div class="telemetry-pill">
           <span>Inflection:</span>
           <span id="header-inflection-badge" style="color: #F59E0B; font-weight: 700; font-family: var(--font-mono);">CALCULATING...</span>
@@ -218,7 +222,7 @@
             </div>
             <div class="kpi-main-stat">
               <span id="kpi-l5-escape-pct" class="kpi-big-number stat-escape">--%</span>
-              <span style="font-size: 13px; color: var(--text-dim);">ESCAPE</span>
+              <span id="kpi-l5-majority-label" style="font-size: 13px; color: var(--text-dim);">L5 VERDICT</span>
             </div>
             <div class="kpi-sub-split">
               <span class="stat-stay">STAY: <b id="kpi-l5-stay-val">0 (0%)</b></span>

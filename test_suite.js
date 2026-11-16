@@ -350,6 +350,16 @@ async function runTestSuite() {
   assert(httpVoteRes.statusCode === 200, 'POST /api/vote returns 200 OK for joined student');
   assert(state.students['EXEC-102'].votes.L1 === 'ESCAPE', 'POST /api/vote successfully updated state');
 
+  // Test Level 5 Vote Recording & Final Verdict Capture
+  const l5VoteRes = await httpRequest('POST', '/api/vote', {
+    studentId: 'EXEC-102',
+    level: 'L5',
+    choice: 'STAY'
+  });
+  assert(l5VoteRes.statusCode === 200, 'POST /api/vote records Level 5 vote');
+  assert(l5VoteRes.json.stats.levelStats.L5.stayCount >= 1, 'Level 5 STAY count incremented in levelStats');
+  assert(l5VoteRes.json.stats.finalVerdict.stayCount >= 1, 'Level 5 STAY count captured in finalVerdict');
+
   // Test P0-2: XSS Sanitization on /api/defense
   const httpDefRes = await httpRequest('POST', '/api/defense', {
     studentId: 'EXEC-102',

@@ -19,23 +19,35 @@
     const connEl = document.getElementById('connectedCount');
     if (connEl) connEl.textContent = connectedText;
 
-    // Determine counts from latest answered level
+    // Determine counts: prioritize Level 5 final verdict if any Level 5 votes exist
+    const l5 = stats.finalVerdict || (stats.levelStats && stats.levelStats.L5);
+    const hasL5Votes = l5 && ((l5.stayCount || 0) + (l5.escapeCount || 0) > 0);
+
     let stayCount = 0;
     let escapeCount = 0;
     let stayPct = 0;
     let escapePct = 0;
     let activeLevelName = 'Level 1 of 5';
 
-    // Check levels in reverse order to find the latest active progress
-    for (let lvl = 5; lvl >= 1; lvl--) {
-      const lvlKey = `L${lvl}`;
-      if (stats.levels && stats.levels[lvlKey] && stats.levels[lvlKey].total > 0) {
-        stayCount = stats.levels[lvlKey].stay;
-        escapeCount = stats.levels[lvlKey].escape;
-        stayPct = stats.levels[lvlKey].stayPct;
-        escapePct = stats.levels[lvlKey].escapePct;
-        activeLevelName = lvl === 5 ? 'Level 5 (Final Verdict)' : `Level ${lvl} of 5`;
-        break;
+    if (hasL5Votes) {
+      stayCount = l5.stayCount || 0;
+      escapeCount = l5.escapeCount || 0;
+      stayPct = l5.stayPct || 0;
+      escapePct = l5.escapePct || 0;
+      activeLevelName = 'Level 5 (Final Verdict: Stay vs Escape)';
+    } else {
+      const lvlStats = stats.levelStats || stats.levels || {};
+      for (let lvl = 5; lvl >= 1; lvl--) {
+        const lvlKey = `L${lvl}`;
+        const st = lvlStats[lvlKey];
+        if (st && ((st.totalVotes || 0) > 0 || (st.stayCount || 0) + (st.escapeCount || 0) > 0)) {
+          stayCount = st.stayCount !== undefined ? st.stayCount : (st.stay || 0);
+          escapeCount = st.escapeCount !== undefined ? st.escapeCount : (st.escape || 0);
+          stayPct = st.stayPct || 0;
+          escapePct = st.escapePct || 0;
+          activeLevelName = lvl === 5 ? 'Level 5 (Final Verdict)' : `Level ${lvl} of 5`;
+          break;
+        }
       }
     }
 
@@ -58,8 +70,9 @@
     }
 
     if (stats.primaryInflectionPoint) {
+      const infl = stats.primaryInflectionPoint;
       document.getElementById('inflectionPointVal').textContent = 
-        `${stats.primaryInflectionPoint.level}: ${stats.primaryInflectionPoint.name}`;
+        `${infl.level}: ${infl.obTheory || infl.lens || infl.name || 'Inflection Point'}`;
     }
 
     document.getElementById('activeLevelVal').textContent = activeLevelName;

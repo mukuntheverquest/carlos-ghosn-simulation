@@ -44,6 +44,7 @@
     socketPulse: document.getElementById('socket-pulse'),
     connectionStatusText: document.getElementById('connection-status-text'),
     connectedCount: document.getElementById('connected-count'),
+    headerL5Badge: document.getElementById('header-l5-badge'),
     headerInflectionBadge: document.getElementById('header-inflection-badge'),
     btnSimulate: document.getElementById('btn-simulate'),
     btnTriggerChallenge: document.getElementById('btn-trigger-challenge'),
@@ -87,6 +88,7 @@
     kpiL1StayVal: document.getElementById('kpi-l1-stay-val'),
     kpiL1EscapeVal: document.getElementById('kpi-l1-escape-val'),
     kpiL5EscapePct: document.getElementById('kpi-l5-escape-pct'),
+    kpiL5MajorityLabel: document.getElementById('kpi-l5-majority-label'),
     kpiL5StayVal: document.getElementById('kpi-l5-stay-val'),
     kpiL5EscapeVal: document.getElementById('kpi-l5-escape-val'),
     kpiDeltaNote: document.getElementById('kpi-delta-note'),
@@ -338,15 +340,40 @@
 
     // 2. KPI Summary Cards
     const l1 = stats.initialDecision || { stayPct: 0, stayCount: 0, escapeCount: 0 };
-    const l5 = stats.finalVerdict || { escapePct: 0, stayCount: 0, escapeCount: 0 };
+    const l5 = stats.finalVerdict || (stats.levelStats && stats.levelStats.L5) || { escapePct: 0, stayPct: 0, stayCount: 0, escapeCount: 0 };
 
     el.kpiL1StayPct.textContent = `${l1.stayPct || 0}%`;
     el.kpiL1StayVal.textContent = `${l1.stayCount || 0} Stay`;
     el.kpiL1EscapeVal.textContent = `${l1.escapeCount || 0} Escape`;
 
-    el.kpiL5EscapePct.textContent = `${l5.escapePct || 0}%`;
-    el.kpiL5StayVal.textContent = `${l5.stayCount || 0} Stay`;
-    el.kpiL5EscapeVal.textContent = `${l5.escapeCount || 0} Escape`;
+    const l5TotalVotes = (l5.stayCount || 0) + (l5.escapeCount || 0);
+    const l5Majority = (l5.stayCount > l5.escapeCount) ? 'STAY' : 'ESCAPE';
+    const l5StayCount = l5.stayCount || 0;
+    const l5EscapeCount = l5.escapeCount || 0;
+    const l5StayPct = l5.stayPct || (l5TotalVotes > 0 ? Math.round((l5StayCount / l5TotalVotes) * 100) : 0);
+    const l5EscapePct = l5.escapePct || (l5TotalVotes > 0 ? Math.round((l5EscapeCount / l5TotalVotes) * 100) : 0);
+
+    if (l5TotalVotes > 0) {
+      const topPct = l5Majority === 'STAY' ? l5StayPct : l5EscapePct;
+      el.kpiL5EscapePct.textContent = `${topPct}%`;
+      el.kpiL5EscapePct.className = `kpi-big-number ${l5Majority === 'STAY' ? 'stat-stay' : 'stat-escape'}`;
+      if (el.kpiL5MajorityLabel) {
+        el.kpiL5MajorityLabel.textContent = `${l5Majority} (${l5TotalVotes} votes)`;
+      }
+    } else {
+      el.kpiL5EscapePct.textContent = `--%`;
+      if (el.kpiL5MajorityLabel) {
+        el.kpiL5MajorityLabel.textContent = `AWAITING L5`;
+      }
+    }
+
+    el.kpiL5StayVal.textContent = `${l5StayCount} (${l5StayPct}%)`;
+    el.kpiL5EscapeVal.textContent = `${l5EscapeCount} (${l5EscapePct}%)`;
+
+    // Header L5 telemetry badge
+    if (el.headerL5Badge) {
+      el.headerL5Badge.textContent = `${l5StayCount} STAY · ${l5EscapeCount} ESCAPE`;
+    }
 
     const deltaEscape = (l5.escapePct || 0) - (l1.escapePct || 0);
     if (deltaEscape > 0) {

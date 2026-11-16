@@ -183,6 +183,9 @@
   let socket = null;
 
   function initNetworking() {
+    // Eagerly register student via REST on startup so session is active
+    syncRegistration();
+
     if (typeof io !== 'undefined') {
       try {
         socket = io({
@@ -225,13 +228,12 @@
 
     if (socket && state.isConnected) {
       socket.emit('join_student', payload);
-    } else {
-      fetch('/api/join', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      }).catch(() => {});
     }
+    fetch('/api/join', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(() => {});
   }
 
   function transmitVote(level, choice, previousChoice) {
@@ -245,13 +247,13 @@
 
     if (socket && state.isConnected) {
       socket.emit('submit_vote', payload);
-    } else {
-      fetch('/api/vote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      }).catch(() => {});
     }
+    // Also post via HTTP REST to guarantee zero dropped votes on mobile network shifts
+    fetch('/api/vote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(() => {});
   }
 
   function transmitDefense(defenseText) {
