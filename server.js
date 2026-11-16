@@ -159,11 +159,13 @@ function getActiveLanIp() {
 }
 
 // ---------------------------------------------------------------------------
-// 3. Presenter Security Middleware
+// 3. Presenter Security Middleware (Default PIN: 4820 if not set in env)
 // ---------------------------------------------------------------------------
+const PRESENTER_PIN = process.env.PRESENTER_PIN || '4820';
+
 function requirePin(req, res, next) {
   const pin = req.get('x-presenter-pin') || (req.body && req.body.pin) || req.query.pin;
-  if (!process.env.PRESENTER_PIN || pin !== process.env.PRESENTER_PIN) {
+  if (!pin || pin !== PRESENTER_PIN) {
     return res.status(401).json({ error: 'Presenter PIN required.' });
   }
   next();
@@ -891,7 +893,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('request_ai_rebuttal', async (payload) => {
-    if (!process.env.PRESENTER_PIN || !payload || payload.pin !== process.env.PRESENTER_PIN) {
+    if (!payload || payload.pin !== PRESENTER_PIN) {
       return;
     }
 
@@ -933,7 +935,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('simulate_cohort', async (payload) => {
-    if (!process.env.PRESENTER_PIN || !payload || payload.pin !== process.env.PRESENTER_PIN) {
+    if (!payload || payload.pin !== PRESENTER_PIN) {
       return;
     }
     try {
@@ -944,7 +946,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('reset_session', (payload) => {
-    if (!process.env.PRESENTER_PIN || !payload || payload.pin !== process.env.PRESENTER_PIN) {
+    if (!payload || payload.pin !== PRESENTER_PIN) {
       return;
     }
     state.students = {};

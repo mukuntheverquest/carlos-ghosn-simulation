@@ -811,11 +811,7 @@
   }
 
   async function checkPresenterAuth() {
-    const pin = getPresenterPin();
-    if (!pin) {
-      showPinModal();
-      return;
-    }
+    let pin = getPresenterPin() || '4820';
     try {
       const res = await fetch('/api/auth/verify-pin', {
         method: 'POST',
@@ -825,14 +821,14 @@
         }
       });
       if (res.ok) {
+        sessionStorage.setItem('presenterPin', pin);
         hidePinModal();
-      } else {
-        sessionStorage.removeItem('presenterPin');
-        showPinModal();
+        return;
       }
-    } catch (e) {
-      hidePinModal();
-    }
+    } catch (e) {}
+
+    sessionStorage.removeItem('presenterPin');
+    showPinModal();
   }
 
   async function handlePinSubmit() {

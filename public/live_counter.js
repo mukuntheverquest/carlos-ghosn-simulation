@@ -134,7 +134,9 @@
     if (resetErrorMsg) resetErrorMsg.style.display = 'none';
   }
 
-  async function executeReset(pin) {
+  const DEFAULT_PIN = '4820';
+
+  async function executeReset(pin, silent = false) {
     try {
       const res = await fetch('/api/reset', {
         method: 'POST',
@@ -161,27 +163,30 @@
           primaryInflectionPoint: { level: 'Level 2', obTheory: "Adams' Equity Theory (Saikawa Double Standard)" }
         });
         pollState();
+        return true;
       } else {
-        if (resetErrorMsg) {
-          resetErrorMsg.textContent = data.error || 'Invalid Presenter PIN.';
-          resetErrorMsg.style.display = 'block';
-        } else {
-          showResetModal();
+        if (!silent) {
+          if (resetErrorMsg) {
+            resetErrorMsg.textContent = data.error || 'Invalid Presenter PIN. Default is 4820.';
+            resetErrorMsg.style.display = 'block';
+          } else {
+            alert(data.error || 'Reset failed. Default PIN is 4820.');
+          }
         }
+        return false;
       }
     } catch (e) {
-      alert('Error resetting session: ' + e.message);
+      if (!silent) alert('Error resetting session: ' + e.message);
+      return false;
     }
   }
 
   if (btnResetCounter) {
-    btnResetCounter.addEventListener('click', () => {
-      const savedPin = sessionStorage.getItem('presenterPin');
-      if (savedPin) {
-        if (confirm('Are you sure you want to reset all classroom votes and counts back to zero?')) {
-          executeReset(savedPin);
-        }
-      } else {
+    btnResetCounter.addEventListener('click', async () => {
+      // 1-Click automatic reset using stored PIN or default 4820
+      const pin = sessionStorage.getItem('presenterPin') || DEFAULT_PIN;
+      const ok = await executeReset(pin, true);
+      if (!ok) {
         showResetModal();
       }
     });
