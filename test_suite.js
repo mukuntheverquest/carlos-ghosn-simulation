@@ -226,6 +226,8 @@ async function runTestSuite() {
   assert(liveCounterRes.statusCode === 200, 'GET /live-counter returns 200 OK');
   assert(liveCounterRes.body.includes('stayCount'), 'GET /live-counter HTML contains #stayCount');
   assert(liveCounterRes.body.includes('escapeCount'), 'GET /live-counter HTML contains #escapeCount');
+  assert(liveCounterRes.body.includes('btnResetCounter'), 'GET /live-counter HTML contains #btnResetCounter');
+  assert(liveCounterRes.body.includes('cohortPill'), 'GET /live-counter HTML contains flexible #cohortPill');
 
   // -------------------------------------------------------------------------
   // SECTION 3: AI ENGINE & SECURITY VERIFICATION

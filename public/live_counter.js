@@ -8,16 +8,21 @@
 
   let currentStay = 0;
   let currentEscape = 0;
-  let currentConnected = 0;
 
   function updateDisplay(stats) {
     if (!stats) return;
 
-    // Use current active level stats or final verdict if complete
+    // Flexible student counter (base target 67, dynamically scales if 68, 70+ join)
     const totalStudents = stats.totalStudents || 0;
-    const connectedText = `${totalStudents} / 67 Joined`;
+    const targetCohort = Math.max(67, totalStudents);
+    const connectedText = `${totalStudents} / ${targetCohort} Joined`;
     const connEl = document.getElementById('connectedCount');
     if (connEl) connEl.textContent = connectedText;
+
+    const cohortPill = document.getElementById('cohortPill');
+    if (cohortPill) {
+      cohortPill.textContent = `LIVE CLASSROOM TELEMETRY · ${targetCohort} CONSULTANTS`;
+    }
 
     // Determine counts: prioritize Level 5 final verdict if any Level 5 votes exist
     const l5 = stats.finalVerdict || (stats.levelStats && stats.levelStats.L5);
@@ -86,7 +91,7 @@
       return;
     }
 
-    const duration = 600;
+    const duration = 500;
     const startTime = performance.now();
 
     function step(timestamp) {
@@ -103,6 +108,105 @@
     requestAnimationFrame(step);
   }
 
+  // -------------------------------------------------------------------------
+  // RESET SESSION HANDLING
+  // -------------------------------------------------------------------------
+  const modalResetPin = document.getElementById('modalResetPin');
+  const inputResetPin = document.getElementById('inputResetPin');
+  const btnResetCounter = document.getElementById('btnResetCounter');
+  const btnCancelResetPin = document.getElementById('btnCancelResetPin');
+  const btnConfirmResetPin = document.getElementById('btnConfirmResetPin');
+  const resetErrorMsg = document.getElementById('resetErrorMsg');
+
+  function showResetModal() {
+    if (modalResetPin) {
+      modalResetPin.style.display = 'flex';
+      if (inputResetPin) {
+        inputResetPin.value = '';
+        inputResetPin.focus();
+      }
+      if (resetErrorMsg) resetErrorMsg.style.display = 'none';
+    }
+  }
+
+  function hideResetModal() {
+    if (modalResetPin) modalResetPin.style.display = 'none';
+    if (resetErrorMsg) resetErrorMsg.style.display = 'none';
+  }
+
+  async function executeReset(pin) {
+    try {
+      const res = await fetch('/api/reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-presenter-pin': pin || ''
+        }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (pin) sessionStorage.setItem('presenterPin', pin);
+        hideResetModal();
+        currentStay = 0;
+        currentEscape = 0;
+        // Immediate visual reset
+        updateDisplay({
+          totalStudents: 0,
+          levelStats: {
+            L1: { stayCount: 0, escapeCount: 0, totalVotes: 0, stayPct: 0, escapePct: 0 },
+            L5: { stayCount: 0, escapeCount: 0, totalVotes: 0, stayPct: 0, escapePct: 0 }
+          },
+          finalVerdict: { stayCount: 0, escapeCount: 0, stayPct: 0, escapePct: 0, majority: 'STAY' },
+          mindChangers: { count: 0, pct: 0 },
+          primaryInflectionPoint: { level: 'Level 2', obTheory: "Adams' Equity Theory (Saikawa Double Standard)" }
+        });
+        pollState();
+      } else {
+        if (resetErrorMsg) {
+          resetErrorMsg.textContent = data.error || 'Invalid Presenter PIN.';
+          resetErrorMsg.style.display = 'block';
+        } else {
+          showResetModal();
+        }
+      }
+    } catch (e) {
+      alert('Error resetting session: ' + e.message);
+    }
+  }
+
+  if (btnResetCounter) {
+    btnResetCounter.addEventListener('click', () => {
+      const savedPin = sessionStorage.getItem('presenterPin');
+      if (savedPin) {
+        if (confirm('Are you sure you want to reset all classroom votes and counts back to zero?')) {
+          executeReset(savedPin);
+        }
+      } else {
+        showResetModal();
+      }
+    });
+  }
+
+  if (btnCancelResetPin) {
+    btnCancelResetPin.addEventListener('click', hideResetModal);
+  }
+
+  if (btnConfirmResetPin) {
+    btnConfirmResetPin.addEventListener('click', () => {
+      const enteredPin = inputResetPin ? inputResetPin.value.trim() : '';
+      executeReset(enteredPin);
+    });
+  }
+
+  if (inputResetPin) {
+    inputResetPin.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const enteredPin = inputResetPin.value.trim();
+        executeReset(enteredPin);
+      }
+    });
+  }
+
   // Socket.io Connection
   if (typeof io !== 'undefined') {
     try {
@@ -115,9 +219,17 @@
       });
 
       socket.on('session_reset', () => {
+        currentStay = 0;
+        currentEscape = 0;
         updateDisplay({
           totalStudents: 0,
-          levels: { L1: { stay: 0, escape: 0, stayPct: 0, escapePct: 0 } }
+          levelStats: {
+            L1: { stayCount: 0, escapeCount: 0, totalVotes: 0, stayPct: 0, escapePct: 0 },
+            L5: { stayCount: 0, escapeCount: 0, totalVotes: 0, stayPct: 0, escapePct: 0 }
+          },
+          finalVerdict: { stayCount: 0, escapeCount: 0, stayPct: 0, escapePct: 0, majority: 'STAY' },
+          mindChangers: { count: 0, pct: 0 },
+          primaryInflectionPoint: { level: 'Level 2', obTheory: "Adams' Equity Theory (Saikawa Double Standard)" }
         });
       });
     } catch (e) {

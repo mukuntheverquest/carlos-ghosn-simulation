@@ -314,7 +314,8 @@
     currentFeed = feed || currentFeed;
 
     const total = stats.totalStudents || 0;
-    el.connectedCount.textContent = `${total} / 67`;
+    const targetCohort = Math.max(67, total);
+    el.connectedCount.textContent = `${total} / ${targetCohort}`;
 
     // 1. Per-Level Progress Bars
     const levels = ['L1', 'L2', 'L3', 'L4', 'L5'];
