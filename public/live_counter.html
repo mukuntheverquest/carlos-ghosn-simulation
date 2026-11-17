@@ -77,17 +77,22 @@
 
     <!-- BOTTOM PROGRESS & INFLECTION FOOTER -->
     <footer class="counter-footer">
-      <div class="footer-card">
-        <span class="footer-label">COGNITIVE SHIFT</span>
-        <span class="footer-value" id="mindChangersVal">0 Students (0%) changed mind</span>
+      <div class="footer-card card-shift-ab">
+        <span class="footer-label">SHIFT A ➔ B (STAY ➔ ESCAPE)</span>
+        <span class="footer-value shift-val-ab" id="shiftAtoBVal">0 Students (0%)</span>
       </div>
-      <div class="footer-card">
+      <div class="footer-card card-shift-ba">
+        <span class="footer-label">SHIFT B ➔ A (ESCAPE ➔ STAY)</span>
+        <span class="footer-value shift-val-ba" id="shiftBtoAVal">0 Students (0%)</span>
+      </div>
+      <div class="footer-card card-inflection">
         <span class="footer-label">PRIMARY OB INFLECTION POINT</span>
         <span class="footer-value" id="inflectionPointVal">Level 2: Adams' Equity (Saikawa Double Standard)</span>
       </div>
-      <div class="footer-card">
+      <div class="footer-card card-level">
         <span class="footer-label">ACTIVE LEVEL</span>
         <span class="footer-value" id="activeLevelVal">Level 1 of 5</span>
+        <span id="mindChangersVal" style="display: none;">0 Students (0%) changed mind</span>
       </div>
     </footer>
   </div>

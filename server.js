@@ -210,8 +210,11 @@ function calculateStats(studentsObj = state.students) {
     st.escapePct = st.totalVotes > 0 ? Math.round((st.escapeCount / st.totalVotes) * 100) : 0;
   });
 
-  // Calculate Mind-Changers
+  // Calculate Mind-Changers (Total, A -> B, and B -> A)
   let mindChangersCount = 0;
+  let shiftAtoBCount = 0; // STAY (Option A) -> ESCAPE (Option B)
+  let shiftBtoACount = 0; // ESCAPE (Option B) -> STAY (Option A)
+
   studentList.forEach(student => {
     const votes = student.votes || {};
     const sequence = ['L1', 'L2', 'L3', 'L4', 'L5']
@@ -220,17 +223,24 @@ function calculateStats(studentsObj = state.students) {
     
     if (sequence.length >= 2) {
       let changed = false;
+      let hasAtoB = false;
+      let hasBtoA = false;
       for (let i = 1; i < sequence.length; i++) {
         if (sequence[i] !== sequence[i - 1]) {
           changed = true;
-          break;
+          if (sequence[i - 1] === 'STAY' && sequence[i] === 'ESCAPE') hasAtoB = true;
+          if (sequence[i - 1] === 'ESCAPE' && sequence[i] === 'STAY') hasBtoA = true;
         }
       }
       if (changed) mindChangersCount++;
+      if (hasAtoB) shiftAtoBCount++;
+      if (hasBtoA) shiftBtoACount++;
     }
   });
 
   const mindChangersPct = totalStudents > 0 ? Math.round((mindChangersCount / totalStudents) * 100) : 0;
+  const shiftAtoBPct = totalStudents > 0 ? Math.round((shiftAtoBCount / totalStudents) * 100) : 0;
+  const shiftBtoAPct = totalStudents > 0 ? Math.round((shiftBtoACount / totalStudents) * 100) : 0;
 
   // Calculate Primary OB Inflection Point (among L2, L3, L4)
   const transitions = {
@@ -300,7 +310,23 @@ function calculateStats(studentsObj = state.students) {
     finalVerdict,
     mindChangers: {
       count: mindChangersCount,
-      pct: mindChangersPct
+      pct: mindChangersPct,
+      shiftAtoB: {
+        count: shiftAtoBCount,
+        pct: shiftAtoBPct
+      },
+      shiftBtoA: {
+        count: shiftBtoACount,
+        pct: shiftBtoAPct
+      }
+    },
+    shiftAtoB: {
+      count: shiftAtoBCount,
+      pct: shiftAtoBPct
+    },
+    shiftBtoA: {
+      count: shiftBtoACount,
+      pct: shiftBtoAPct
     },
     primaryInflectionPoint
   };

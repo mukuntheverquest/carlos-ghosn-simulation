@@ -334,19 +334,44 @@ body {
 /* Footer */
 .counter-footer {
   display: grid;
-  grid-template-columns: 1fr 1.5fr 1fr;
-  gap: 18px;
+  grid-template-columns: 1fr 1fr 1.5fr 1fr;
+  gap: 16px;
   padding-top: 10px;
+}
+
+@media (max-width: 900px) {
+  .counter-footer {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .footer-card {
   background: #FFFFFF;
   border: 1.5px solid var(--border);
   border-radius: 16px;
-  padding: 14px 20px;
+  padding: 14px 18px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.card-shift-ab {
+  border-left: 4px solid var(--escape-red);
+}
+
+.card-shift-ba {
+  border-left: 4px solid var(--stay-blue);
+}
+
+.shift-val-ab {
+  color: var(--escape-red) !important;
+  font-weight: 800 !important;
+}
+
+.shift-val-ba {
+  color: var(--stay-blue) !important;
+  font-weight: 800 !important;
 }
 
 .footer-label {

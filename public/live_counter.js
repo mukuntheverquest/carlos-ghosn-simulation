@@ -70,8 +70,22 @@
 
     // Footer stats
     if (stats.mindChangers) {
-      document.getElementById('mindChangersVal').textContent = 
-        `${stats.mindChangers.count} Students (${stats.mindChangers.pct}%) changed mind`;
+      const mcEl = document.getElementById('mindChangersVal');
+      if (mcEl) {
+        mcEl.textContent = `${stats.mindChangers.count} Students (${stats.mindChangers.pct}%) changed mind`;
+      }
+
+      const a2b = stats.mindChangers.shiftAtoB || stats.shiftAtoB || { count: 0, pct: 0 };
+      const elAtoB = document.getElementById('shiftAtoBVal');
+      if (elAtoB) {
+        elAtoB.textContent = `${a2b.count} Students (${a2b.pct}%)`;
+      }
+
+      const b2a = stats.mindChangers.shiftBtoA || stats.shiftBtoA || { count: 0, pct: 0 };
+      const elBtoA = document.getElementById('shiftBtoAVal');
+      if (elBtoA) {
+        elBtoA.textContent = `${b2a.count} Students (${b2a.pct}%)`;
+      }
     }
 
     if (stats.primaryInflectionPoint) {
@@ -159,7 +173,14 @@
             L5: { stayCount: 0, escapeCount: 0, totalVotes: 0, stayPct: 0, escapePct: 0 }
           },
           finalVerdict: { stayCount: 0, escapeCount: 0, stayPct: 0, escapePct: 0, majority: 'STAY' },
-          mindChangers: { count: 0, pct: 0 },
+          mindChangers: {
+            count: 0,
+            pct: 0,
+            shiftAtoB: { count: 0, pct: 0 },
+            shiftBtoA: { count: 0, pct: 0 }
+          },
+          shiftAtoB: { count: 0, pct: 0 },
+          shiftBtoA: { count: 0, pct: 0 },
           primaryInflectionPoint: { level: 'Level 2', obTheory: "Adams' Equity Theory (Saikawa Double Standard)" }
         });
         pollState();
@@ -233,7 +254,14 @@
             L5: { stayCount: 0, escapeCount: 0, totalVotes: 0, stayPct: 0, escapePct: 0 }
           },
           finalVerdict: { stayCount: 0, escapeCount: 0, stayPct: 0, escapePct: 0, majority: 'STAY' },
-          mindChangers: { count: 0, pct: 0 },
+          mindChangers: {
+            count: 0,
+            pct: 0,
+            shiftAtoB: { count: 0, pct: 0 },
+            shiftBtoA: { count: 0, pct: 0 }
+          },
+          shiftAtoB: { count: 0, pct: 0 },
+          shiftBtoA: { count: 0, pct: 0 },
           primaryInflectionPoint: { level: 'Level 2', obTheory: "Adams' Equity Theory (Saikawa Double Standard)" }
         });
       });

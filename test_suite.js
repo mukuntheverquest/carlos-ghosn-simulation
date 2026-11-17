@@ -228,6 +228,8 @@ async function runTestSuite() {
   assert(liveCounterRes.body.includes('escapeCount'), 'GET /live-counter HTML contains #escapeCount');
   assert(liveCounterRes.body.includes('btnResetCounter'), 'GET /live-counter HTML contains #btnResetCounter');
   assert(liveCounterRes.body.includes('cohortPill'), 'GET /live-counter HTML contains flexible #cohortPill');
+  assert(liveCounterRes.body.includes('shiftAtoBVal'), 'GET /live-counter HTML contains #shiftAtoBVal');
+  assert(liveCounterRes.body.includes('shiftBtoAVal'), 'GET /live-counter HTML contains #shiftBtoAVal');
 
   // -------------------------------------------------------------------------
   // SECTION 3: AI ENGINE & SECURITY VERIFICATION
@@ -412,6 +414,8 @@ async function runTestSuite() {
   // Metric 4: Mind-Changers
   assert(stats.mindChangers.count === 28, `Metric 4A - Mind-Changers count: 28 (actual: ${stats.mindChangers.count})`);
   assert(stats.mindChangers.pct === 42, `Metric 4B - Mind-Changers percentage: 42% (actual: ${stats.mindChangers.pct}%)`);
+  assert(stats.mindChangers.shiftAtoB.count === 25, `Metric 4C - Shift A to B (Stay to Escape): 25 (actual: ${stats.mindChangers.shiftAtoB.count})`);
+  assert(stats.mindChangers.shiftBtoA.count === 3, `Metric 4D - Shift B to A (Escape to Stay): 3 (actual: ${stats.mindChangers.shiftBtoA.count})`);
 
   // Metric 5: Primary OB Inflection Point
   assert(stats.primaryInflectionPoint.level === 'L2', `Metric 5A - Primary Inflection Point level: L2 (actual: ${stats.primaryInflectionPoint.level})`);
